@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTrex Revenue Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>CoreTrex Revenue Dashboard</h1>
+        <div class="revenue-section">
+            <h2>ARR: $<span id="annualRevenue">0</span></h2>
+            <h2>MRR: $<span id="totalRevenue">0</span></h2>
+            <h2>Brands: <span id="totalClients">0</span></h2>
+            <h2 class="solid">Solid: <span id="totalSolid">0</span></h2>
+            <h2 class="risk">Risk: <span id="totalRisk">0</span></h2>
+            <h2 class="terminated">Terminated: <span id="totalTerminated">0</span></h2>
+        </div>
+    </div>
+    <div class="input-section">
+        <input type="text" id="clientName" placeholder="Enter Client Name">
+        <input type="number" id="clientRetainer" placeholder="Enter Client Retainer">
+        <button onclick="addClient()">Add Client</button>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column" id="leftColumn">
+                <div class="manager" id="manager1">
+                    <div class="manager-header">
+                        <h2 class="manager-name" id="apexNavigatorsName">Apex Navigators</h2>
+                        <div class="manager-icons">
+                            <button class="edit-name" onclick="editManagerName('apexNavigatorsName')">✎</button>
+                        </div>
+                    </div>
+                    <div class="manager-stats">
+                        <span class="managerMRR">MRR: $<span>0</span></span>
+                        <span class="managerClients">Clients: <span>0</span></span>
+                    </div>
+                    <div class="clients" id="apexNavigatorsClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
+            </div>
+            <div class="column" id="rightColumn">
+                <div class="manager" id="manager2">
+                    <div class="manager-header">
+                        <h2 class="manager-name" id="primePioneersName">Prime Pioneers</h2>
+                        <div class="manager-icons">
+                            <button class="edit-name" onclick="editManagerName('primePioneersName')">✎</button>
+                        </div>
+                    </div>
+                    <div class="manager-stats">
+                        <span class="managerMRR">MRR: $<span>0</span></span>
+                        <span class="managerClients">Clients: <span>0</span></span>
+                    </div>
+                    <div class="clients" id="primePioneersClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
+            </div>
+        </div>
+        <button class="add-manager" onclick="addManager()">+</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

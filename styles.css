@@ -1,0 +1,275 @@
+/* styles.css */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    background-color: #f8f9fa;
+}
+
+.header {
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.header h1 {
+    color: #333;
+    text-align: center;
+    font-weight: bold; /* Make title bold */
+    margin-bottom: 10px;
+}
+
+.revenue-section {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.revenue-section h2 {
+    font-weight: 400;
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.revenue-section h2.solid {
+    color: #004085;
+}
+
+.revenue-section h2.risk {
+    color: #856404;
+}
+
+.revenue-section h2.terminated {
+    color: #721c24;
+}
+
+.input-section {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    padding-top: 150px; /* Add more space for the fixed header */
+}
+
+input, button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    margin-top: 20px;
+    height: calc(100vh - 200px); /* Adjust height to account for header and input section */
+    overflow: hidden; /* Prevent content from overflowing the container */
+}
+
+.columns {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+}
+
+.column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto; /* Make columns scrollable */
+    height: 100%;
+}
+
+.manager {
+    background-color: #d6d8db; /* Set darker grey background for pods */
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    height: 700px; /* Set fixed height for pods */
+    overflow-y: auto; /* Make pods scrollable */
+}
+
+.manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.manager-name {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.manager-icons {
+    display: flex;
+    gap: 5px;
+}
+
+.manager-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-top: 10px;
+    padding-bottom: 15px; /* Added padding below MRR and Client count */
+}
+
+.manager-stats span {
+    margin-right: 10px;
+}
+
+.edit-name {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.delete-manager {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 18px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.clients {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.client {
+    padding: 10px;
+    border-radius: 5px;
+    cursor: grab;
+    user-select: none;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.client.solid {
+    background-color: #004085;
+    color: white;
+    outline: 2px solid white; /* Add this line for white outline */
+}
+
+.client.solid .client-details,
+.client.solid .delete svg {
+    color: white;
+    fill: white;
+}
+
+.client.risk {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.client.terminated {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.client-info {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.client-details {
+    font-size: 0.8em;
+    color: #666;
+    margin-right: 10px;
+}
+
+.client .status-buttons {
+    display: flex;
+    gap: 5px;
+    margin-right: 10px;
+}
+
+.client .status-button {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.client .status-button.solid {
+    background-color: #004085;
+    color: white;
+    outline: 2px solid white; /* Add this line for white outline */
+}
+
+.client .status-button.risk {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.client .status-button.terminated {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.client .edit {
+    background-color: #ffc107;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.client .edit:hover {
+    background-color: #e0a800;
+}
+
+.client .delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.client .delete:hover {
+    color: #c82333;
+}
+
+.add-manager {
+    background-color: #28a745;
+    color: white;
+    font-size: 18px; /* Adjust font size */
+    border: none;
+    border-radius: 5px; /* Make it a rectangle */
+    padding: 10px 20px;
+    cursor: pointer;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+.add-manager:hover {
+    background-color: #218838;
+}
