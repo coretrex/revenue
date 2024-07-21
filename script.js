@@ -1,9 +1,8 @@
-// Import Firebase modules
+// Firebase configuration and initialization
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCUKkOjTS4jrL5ioUN9PKtWppca6Hzjbn4",
   authDomain: "coretrex-revenue.firebaseapp.com",
@@ -14,10 +13,23 @@ const firebaseConfig = {
   measurementId: "G-MFYT73882K"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Google Authentication for login
+function loginUser() {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            // The signed-in user info.
+            const user = result.user;
+            console.log("User signed in: ", user.displayName);
+            // Update UI or state as needed
+        }).catch((error) => {
+            console.error("Login failed: ", error.message);
+        });
+}
 
 let clientId = 0;
 let totalRevenue = 0;
@@ -30,20 +42,10 @@ let forecastRevenue = 0;
 let forecastClients = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginButton').addEventListener('click', loginUser);
     loadPods();
     loadClients();
 });
-
-function loginUser() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("User signed in");
-            // Optionally you can load user-specific data here
-        }).catch((error) => {
-            console.error("Error signing in: ", error);
-        });
-}
 
 function addClientToPod(podId) {
     const pod = document.getElementById(podId).closest('.pod');
@@ -384,7 +386,7 @@ function savePods() {
     const pods = [];
     document.querySelectorAll('.pod').forEach(pod => {
         const podId = pod.id;
-        the podName = pod.querySelector('.pod-name').innerText;
+        const podName = pod.querySelector('.pod-name').innerText;
         const podClientsId = pod.querySelector('.clients').id;
         pods.push({ id: podId, name: podName, clientsId: podClientsId });
     });
@@ -420,7 +422,7 @@ function loadPods() {
                 <button class="delete-pod" onclick="deletePod('${pod.id}')">🗑️</button>
             `;
             const leftColumn = document.getElementById('leftColumn');
-            the rightColumn = document.getElementById('rightColumn');
+            const rightColumn = document.getElementById('rightColumn');
             if (leftColumn.children.length <= rightColumn.children.length) {
                 leftColumn.appendChild(podDiv);
             } else {
@@ -434,13 +436,13 @@ function loadPods() {
 
 function editPodName(podId) {
     const podSpan = document.getElementById(podId);
-    the currentName = podSpan.innerText;
+    const currentName = podSpan.innerText;
     podSpan.innerHTML = `<input type="text" value="${currentName}" id="${podId}-edit" onblur="savePodName('${podId}')">`;
     document.getElementById(`${podId}-edit`).focus();
 }
 
 function savePodName(podId) {
-    the podInput = document.getElementById(`${podId}-edit`);
+    const podInput = document.getElementById(`${podId}-edit`);
     const newName = podInput.value;
     document.getElementById(podId).innerText = newName;
     savePods();
@@ -448,7 +450,7 @@ function savePodName(podId) {
 
 function addPod() {
     const leftColumn = document.getElementById('leftColumn');
-    the rightColumn = document.getElementById('rightColumn');
+    const rightColumn = document.getElementById('rightColumn');
     const newPodId = `pod${document.querySelectorAll('.pod').length + 1}`;
     const newClientsId = `clients${document.querySelectorAll('.clients').length + 1}`;
 
@@ -482,7 +484,7 @@ function addPod() {
     }
 
     // Ensure the new pod can handle drag and drop
-    the newClientsDiv = document.getElementById(newClientsId);
+    const newClientsDiv = document.getElementById(newClientsId);
     newClientsDiv.addEventListener('dragover', allowDrop);
     newClientsDiv.addEventListener('drop', drop);
 
@@ -491,7 +493,7 @@ function addPod() {
 }
 
 function sortClients(columnId) {
-    the column = document.getElementById(columnId);
+    const column = document.getElementById(columnId);
     const clients = Array.from(column.querySelectorAll('.client'));
     clients.sort((a, b) => {
         const statusOrder = ['solid', 'risk', 'terminated', 'forecast'];
