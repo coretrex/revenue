@@ -1,15 +1,18 @@
-/* styles.css */
+/* Importing Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+/* Basic resets and background setup */
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #000428 0%, #004e92 100%);
 }
 
+/* Header styling */
 .header {
-    background-color: #fff;
-    padding: 20px;
+    position: relative;
+    padding: 20px 0;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    position: fixed;
     width: 100%;
     top: 0;
     left: 0;
@@ -17,12 +20,25 @@ body {
 }
 
 .header h1 {
-    color: #333;
+    color: white;
     text-align: center;
-    font-weight: bold; /* Make title bold */
+    font-weight: 700;
     margin-bottom: 10px;
+    font-size: 3em; /* Large font size */
 }
 
+/* Login icon in the header */
+.login-icon {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    color: white;
+    font-size: 24px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Revenue section styling */
 .revenue-section {
     text-align: center;
     margin-bottom: 20px;
@@ -31,53 +47,36 @@ body {
 .revenue-section h2 {
     font-weight: 400;
     display: inline-block;
+    color: #fff;
     margin: 0 10px;
 }
 
 .revenue-section h2.solid {
-    color: #004085;
+    color: #fff;
 }
 
 .revenue-section h2.risk {
-    color: #856404;
+    color: #F08B01; /* Orange for risks */
 }
 
 .revenue-section h2.terminated {
-    color: #721c24;
+    color: #D25E5E; /* Red for terminated */
 }
 
-.input-section {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-    padding-top: 150px; /* Add more space for the fixed header */
+/* Forecast metrics styling */
+.revenue-section h2.forecast {
+    color: #808080; /* Grey color */
+    font-size: 16px;
 }
 
-input, button {
-    padding: 10px;
-    margin: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
+/* Container and column layout */
 .container {
     display: flex;
     justify-content: space-between;
     padding: 20px;
     margin-top: 20px;
-    height: calc(100vh - 200px); /* Adjust height to account for header and input section */
-    overflow: hidden; /* Prevent content from overflowing the container */
+    height: calc(100vh - 200px);
+    overflow: hidden;
 }
 
 .columns {
@@ -92,177 +91,67 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    overflow-y: auto; /* Make columns scrollable */
+    overflow-y: auto;
     height: 100%;
 }
 
-.manager {
-    background-color: #d6d8db; /* Set darker grey background for pods */
+/* Pod styling */
+.pod {
+    background-color: #fff;
     padding: 10px;
-    border-radius: 10px;
+    border-radius: 6px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     position: relative;
-    height: 700px; /* Set fixed height for pods */
-    overflow-y: auto; /* Make pods scrollable */
+    height: 700px;
+    overflow-y: scroll; /* Allow vertical scrolling */
 }
 
-.manager-header {
+.pod-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.manager-name {
+.pod-name {
     font-weight: bold;
     font-size: 1.2em;
 }
 
-.manager-icons {
+.pod-icons {
     display: flex;
     gap: 5px;
 }
 
-.manager-stats {
+.pod-stats {
     display: flex;
     justify-content: space-between;
     font-size: 0.9em;
     font-weight: bold;
     margin-top: 10px;
-    padding-bottom: 15px; /* Added padding below MRR and Client count */
+    padding-bottom: 15px;
 }
 
-.manager-stats span {
-    margin-right: 10px;
-}
-
-.edit-name {
-    background: none;
+/* Button styling */
+button {
+    background-color: #007bff;
+    color: #fff;
     border: none;
-    color: #007bff;
     cursor: pointer;
-    font-size: 18px;
-}
-
-.delete-manager {
-    background: none;
-    border: none;
-    color: #dc3545;
-    cursor: pointer;
-    font-size: 18px;
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-}
-
-.clients {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.client {
     padding: 10px;
     border-radius: 5px;
-    cursor: grab;
-    user-select: none;
-    background-color: #ffffff;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
-.client.solid {
-    background-color: #004085;
-    color: white;
-    outline: 2px solid white; /* Add this line for white outline */
+button:hover {
+    background-color: #0056b3;
 }
 
-.client.solid .client-details,
-.client.solid .delete svg {
-    color: white;
-    fill: white;
-}
-
-.client.risk {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.client.terminated {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.client-info {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.client-details {
-    font-size: 0.8em;
-    color: #666;
-    margin-right: 10px;
-}
-
-.client .status-buttons {
-    display: flex;
-    gap: 5px;
-    margin-right: 10px;
-}
-
-.client .status-button {
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-}
-
-.client .status-button.solid {
-    background-color: #004085;
-    color: white;
-    outline: 2px solid white; /* Add this line for white outline */
-}
-
-.client .status-button.risk {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.client .status-button.terminated {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.client .edit {
-    background-color: #ffc107;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right: 5px;
-}
-
-.client .edit:hover {
-    background-color: #e0a800;
-}
-
-.client .delete {
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.client .delete:hover {
-    color: #c82333;
-}
-
-.add-manager {
+/* Add-pod button specific styling */
+.add-pod {
     background-color: #28a745;
     color: white;
-    font-size: 18px; /* Adjust font size */
+    font-size: 18px;
     border: none;
-    border-radius: 5px; /* Make it a rectangle */
+    border-radius: 5px;
     padding: 10px 20px;
     cursor: pointer;
     position: fixed;
@@ -270,6 +159,6 @@ button:hover {
     right: 20px;
 }
 
-.add-manager:hover {
+.add-pod:hover {
     background-color: #218838;
 }
