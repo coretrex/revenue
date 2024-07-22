@@ -1,3 +1,20 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getFirestore, collection, getDoc, setDoc, doc } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
+  authDomain: "coretrex-forecast.firebaseapp.com",
+  projectId: "coretrex-forecast",
+  storageBucket: "coretrex-forecast.appspot.com",
+  messagingSenderId: "619634948025",
+  appId: "1:619634948025:web:229017572239cb7cfd2868"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 let clientId = 0;
 let totalRevenue = 0;
 let mrrRiskRevenue = 0;
@@ -11,29 +28,142 @@ let forecastClients = 0;
 document.addEventListener('DOMContentLoaded', () => {
     loadPods();
     loadClients();
-    checkLoginState(); // Check if the user is already logged in
+    showMainContent(); // Directly show the main content
 });
 
-function checkPassword() {
-    const password = document.getElementById('password').value;
-    if (password === 'CoreTrex2020') {
-        localStorage.setItem('isLoggedIn', 'true'); // Save login state
-        showMainContent();
-    } else {
-        alert('Incorrect password');
-    }
-}
-
-function checkLoginState() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    if (isLoggedIn === 'true') {
-        showMainContent();
-    }
-}
-
 function showMainContent() {
-    document.getElementById('password-section').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
+}
+
+async function saveClients() {
+    const clients = [];
+    document.querySelectorAll('.client').forEach(clientDiv => {
+        const clientId = clientDiv.id;
+        const clientName = clientDiv.querySelector('.client-info').textContent;
+        const clientDetails = clientDiv.querySelector('.client-details').textContent;
+        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
+        const status = clientDiv.classList.contains('solid') ? 'solid' :
+            clientDiv.classList.contains('risk') ? 'risk' :
+            clientDiv.classList.contains('terminated') ? 'terminated' :
+            clientDiv.classList.contains('forecast') ? 'forecast' : '';
+        const column = clientDiv.closest('.clients').id;
+
+        clients.push({ id: clientId, name: clientName, retainer, status, column });
+    });
+
+    await setDoc(doc(db, 'dashboard', 'clients'), { clients });
+
+    await setDoc(doc(db, 'dashboard', 'metrics'), {
+        totalRevenue,
+        mrrRiskRevenue,
+        totalClients,
+        totalSolid,
+        totalRisk,
+        totalTerminated,
+        forecastRevenue,
+        forecastClients
+    });
+}
+
+async function savePods() {
+    const pods = [];
+    document.querySelectorAll('.pod').forEach(pod => {
+        const podId = pod.id;
+        const podName = pod.querySelector('.pod-name').innerText;
+        const podClientsId = pod.querySelector('.clients').id;
+        pods.push({ id: podId, name: podName, clientsId: podClientsId });
+    });
+
+    await setDoc(doc(db, 'dashboard', 'pods'), { pods });
+}
+
+async function loadClients() {
+    const docRef = doc(db, 'dashboard', 'clients');
+    const docSnap = await getDoc(docRef);
+    const metricsRef = doc(db, 'dashboard', 'metrics');
+    const metricsSnap = await getDoc(metricsRef);
+
+    if (docSnap.exists()) {
+        const data = docSnap.data().clients;
+        data.forEach(client => {
+            const clientDiv = createClientDiv(client.id, client.name, client.retainer);
+            if (client.status) {
+                clientDiv.classList.add(client.status);
+                if (client.status === 'forecast') {
+                    clientDiv.style.color = '#696969';
+                    clientDiv.style.backgroundColor = '#d3d3d3';
+                }
+            }
+            document.getElementById(client.column).appendChild(clientDiv);
+            if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
+                totalRevenue += client.retainer;
+                totalClients += 1;
+            } else if (clientDiv.classList.contains('forecast')) {
+                forecastRevenue += client.retainer;
+                forecastClients += 1;
+            }
+        });
+        clientId = data.length;
+        updateMetrics();
+        updatePodMetrics();
+        sortAllClients();
+    }
+
+    if (metricsSnap.exists()) {
+        const data = metricsSnap.data();
+        totalRevenue = data.totalRevenue;
+        mrrRiskRevenue = data.mrrRiskRevenue;
+        totalClients = data.totalClients;
+        totalSolid = data.totalSolid;
+        totalRisk = data.totalRisk;
+        totalTerminated = data.totalTerminated;
+        forecastRevenue = data.forecastRevenue;
+        forecastClients = data.forecastClients;
+        updateMetrics();
+    }
+}
+
+async function loadPods() {
+    const docRef = doc(db, 'dashboard', 'pods');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data().pods;
+        document.getElementById('leftColumn').innerHTML = '';
+        document.getElementById('rightColumn').innerHTML = '';
+        data.forEach(pod => {
+            const podDiv = document.createElement('div');
+            podDiv.classList.add('pod');
+            podDiv.id = pod.id;
+            podDiv.innerHTML = `
+                <div class="pod-header">
+                    <h2 class="pod-name" id="${pod.id}Name">${pod.name}</h2>
+                    <div class="pod-icons">
+                        <button class="edit-name" onclick="editPodName('${pod.id}Name')">✎</button>
+                    </div>
+                </div>
+                <div class="pod-stats">
+                    <span class="podMRR">MRR: $<span>0</span></span>
+                    <span class="podClients">Clients: <span>0</span></span>
+                </div>
+                <div class="clients" id="${pod.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                <div class="input-section">
+                    <input type="text" class="clientName" placeholder="Enter Client Name">
+                    <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
+                    <button onclick="addClientToPod('${pod.clientsId}')">Add Client</button>
+                </div>
+                <button class="delete-pod" onclick="deletePod('${pod.id}')">🗑️</button>
+            `;
+            const leftColumn = document.getElementById('leftColumn');
+            const rightColumn = document.getElementById('rightColumn');
+            if (leftColumn.children.length <= rightColumn.children.length) {
+                leftColumn.appendChild(podDiv);
+            } else {
+                rightColumn.appendChild(podDiv);
+            }
+            podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
+            podDiv.querySelector('.clients').addEventListener('drop', drop);
+        });
+    }
 }
 
 function addClientToPod(podId) {
@@ -64,8 +194,8 @@ function addClientToPod(podId) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClients();
-        savePods();
+        saveClients(); // Save clients after adding
+        savePods(); // Save pods after adding
         sortClients(podId);
 
         clientNameInput.value = '';
@@ -140,8 +270,8 @@ function deleteClient(clientId, clientRetainer) {
     clientDiv.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClients();
-    savePods();
+    saveClients(); // Save clients after deleting
+    savePods(); // Save pods after deleting
 }
 
 function editClient(clientId, oldRetainer) {
@@ -178,8 +308,8 @@ function saveClient(clientId, oldRetainer) {
         }
         updateMetrics();
         updatePodMetrics();
-        saveClients();
-        savePods();
+        saveClients(); // Save clients after editing
+        savePods(); // Save pods after editing
         sortClients(clientDiv.closest('.clients').id);
     } else {
         alert('Please enter client name and retainer.');
@@ -230,8 +360,8 @@ function changeStatus(clientId, status) {
 
     updateMetrics();
     updatePodMetrics();
-    saveClients();
-    savePods();
+    saveClients(); // Save clients after changing status
+    savePods(); // Save pods after changing status
     sortClients(clientDiv.closest('.clients').id);
 }
 
@@ -311,116 +441,8 @@ function deletePod(podId) {
     pod.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClients();
-    savePods();
-}
-
-function saveClients() {
-    const clients = [];
-    document.querySelectorAll('.client').forEach(clientDiv => {
-        const clientId = clientDiv.id;
-        const clientName = clientDiv.querySelector('.client-info').textContent;
-        const clientDetails = clientDiv.querySelector('.client-details').textContent;
-        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
-        const status = clientDiv.classList.contains('solid') ? 'solid' :
-            clientDiv.classList.contains('risk') ? 'risk' :
-            clientDiv.classList.contains('terminated') ? 'terminated' :
-            clientDiv.classList.contains('forecast') ? 'forecast' : '';
-        const column = clientDiv.closest('.clients').id;
-        const podName = clientDiv.closest('.pod').querySelector('.pod-name').innerText;
-
-        clients.push({ id: clientId, name: clientName, retainer, status, column, podName });
-    });
-
-    localStorage.setItem('clients', JSON.stringify(clients));
-    localStorage.setItem('totalRevenue', totalRevenue);
-    localStorage.setItem('mrrRiskRevenue', mrrRiskRevenue);
-    localStorage.setItem('totalClients', totalClients);
-    localStorage.setItem('totalSolid', totalSolid);
-    localStorage.setItem('totalRisk', totalRisk);
-    localStorage.setItem('totalTerminated', totalTerminated);
-    localStorage.setItem('forecastRevenue', forecastRevenue);
-    localStorage.setItem('forecastClients', forecastClients);
-}
-
-function loadClients() {
-    const clients = JSON.parse(localStorage.getItem('clients'));
-    if (clients) {
-        clients.forEach(client => {
-            const clientDiv = createClientDiv(client.id, client.name, client.retainer);
-            if (client.status) {
-                clientDiv.classList.add(client.status);
-                if (client.status === 'forecast') {
-                    clientDiv.style.color = '#696969';
-                    clientDiv.style.backgroundColor = '#d3d3d3';
-                }
-            }
-            document.getElementById(client.column).appendChild(clientDiv);
-            if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
-                totalRevenue += client.retainer;
-                totalClients += 1;
-            } else if (clientDiv.classList.contains('forecast')) {
-                forecastRevenue += client.retainer;
-                forecastClients += 1;
-            }
-        });
-        clientId = clients.length;
-        updateMetrics();
-        updatePodMetrics();
-        sortAllClients();
-    }
-}
-
-function savePods() {
-    const pods = [];
-    document.querySelectorAll('.pod').forEach(pod => {
-        const podId = pod.id;
-        const podName = pod.querySelector('.pod-name').innerText;
-        const podClientsId = pod.querySelector('.clients').id;
-        pods.push({ id: podId, name: podName, clientsId: podClientsId });
-    });
-    localStorage.setItem('pods', JSON.stringify(pods));
-}
-
-function loadPods() {
-    const pods = JSON.parse(localStorage.getItem('pods'));
-    if (pods) {
-        document.getElementById('leftColumn').innerHTML = '';
-        document.getElementById('rightColumn').innerHTML = '';
-        pods.forEach(pod => {
-            const podDiv = document.createElement('div');
-            podDiv.classList.add('pod');
-            podDiv.id = pod.id;
-            podDiv.innerHTML = `
-                <div class="pod-header">
-                    <h2 class="pod-name" id="${pod.id}Name">${pod.name}</h2>
-                    <div class="pod-icons">
-                        <button class="edit-name" onclick="editPodName('${pod.id}Name')">✎</button>
-                    </div>
-                </div>
-                <div class="pod-stats">
-                    <span class="podMRR">MRR: $<span>0</span></span>
-                    <span class="podClients">Clients: <span>0</span></span>
-                </div>
-                <div class="clients" id="${pod.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-                <div class="input-section">
-                    <input type="text" class="clientName" placeholder="Enter Client Name">
-                    <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
-                    <button onclick="addClientToPod('${pod.clientsId}')">Add Client</button>
-                </div>
-                <button class="delete-pod" onclick="deletePod('${pod.id}')">🗑️</button>
-            `;
-            const leftColumn = document.getElementById('leftColumn');
-            const rightColumn = document.getElementById('rightColumn');
-            if (leftColumn.children.length <= rightColumn.children.length) {
-                leftColumn.appendChild(podDiv);
-            } else {
-                rightColumn.appendChild(podDiv);
-            }
-            podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
-            podDiv.querySelector('.clients').addEventListener('drop', drop);
-        });
-    }
+    saveClients(); // Save clients after deleting pod
+    savePods(); // Save pods after deleting pod
 }
 
 function editPodName(podId) {
@@ -434,7 +456,7 @@ function savePodName(podId) {
     const podInput = document.getElementById(`${podId}-edit`);
     const newName = podInput.value;
     document.getElementById(podId).innerText = newName;
-    savePods();
+    savePods(); // Save pods after editing name
 }
 
 function addPod() {
@@ -477,8 +499,8 @@ function addPod() {
     newClientsDiv.addEventListener('dragover', allowDrop);
     newClientsDiv.addEventListener('drop', drop);
 
-    savePods();
-    saveClients();
+    savePods(); // Save pods after adding
+    saveClients(); // Save clients after adding
 }
 
 function sortClients(columnId) {
