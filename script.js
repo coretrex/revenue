@@ -1,20 +1,18 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "firebase/firestore";
+// Firebase configuration and initialization
+function initializeFirebase() {
+    const firebaseConfig = {
+        apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
+        authDomain: "coretrex-forecast.firebaseapp.com",
+        projectId: "coretrex-forecast",
+        storageBucket: "coretrex-forecast.appspot.com",
+        messagingSenderId: "619634948025",
+        appId: "1:619634948025:web:229017572239cb7cfd2868"
+    };
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
-  authDomain: "coretrex-forecast.firebaseapp.com",
-  projectId: "coretrex-forecast",
-  storageBucket: "coretrex-forecast.appspot.com",
-  messagingSenderId: "619634948025",
-  appId: "1:619634948025:web:229017572239cb7cfd2868"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+    console.log('Firebase initialized', db);
+}
 
 let clientId = 0;
 let totalRevenue = 0;
@@ -27,9 +25,22 @@ let forecastRevenue = 0;
 let forecastClients = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
     loadPods();
     loadClients();
 });
+
+function checkPassword() {
+    const password = document.getElementById('password').value;
+    if (password === 'CoreTrex2020') {
+        console.log('Password is correct');
+        document.getElementById('password-section').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+    } else {
+        alert('Incorrect password');
+        console.log('Incorrect password');
+    }
+}
 
 async function addClientToPod(podId) {
     const pod = document.getElementById(podId).closest('.pod');
@@ -314,6 +325,7 @@ async function saveClient(id, name, retainer, podId, status) {
             podId,
             status: status.toString(),
         });
+        console.log('Client saved successfully');
     } catch (e) {
         console.error("Error adding client: ", e);
     }
@@ -329,6 +341,7 @@ async function updateClientInFirestore(id, name, retainer) {
             retainer,
         });
     });
+    console.log('Client updated successfully');
 }
 
 async function updateClientStatusInFirestore(id, status) {
@@ -340,6 +353,7 @@ async function updateClientStatusInFirestore(id, status) {
             status,
         });
     });
+    console.log('Client status updated successfully');
 }
 
 async function deleteClientFromFirestore(id) {
@@ -349,6 +363,7 @@ async function deleteClientFromFirestore(id) {
         const clientRef = doc.ref;
         await deleteDoc(clientRef);
     });
+    console.log('Client deleted successfully');
 }
 
 async function deletePodFromFirestore(podId) {
@@ -358,6 +373,7 @@ async function deletePodFromFirestore(podId) {
         const podRef = doc.ref;
         await deleteDoc(podRef);
     });
+    console.log('Pod deleted successfully');
 }
 
 async function savePods() {
@@ -375,6 +391,7 @@ async function savePods() {
             const podRef = doc(podCollection, pod.id);
             await setDoc(podRef, pod);
         }));
+        console.log('Pods saved successfully');
     } catch (e) {
         console.error("Error saving pods: ", e);
     }
@@ -405,6 +422,7 @@ async function loadClients() {
     updateMetrics();
     updatePodMetrics();
     sortAllClients();
+    console.log('Clients loaded successfully');
 }
 
 async function loadPods() {
@@ -445,6 +463,7 @@ async function loadPods() {
         podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
         podDiv.querySelector('.clients').addEventListener('drop', drop);
     });
+    console.log('Pods loaded successfully');
 }
 
 function editPodName(podId) {
@@ -460,6 +479,7 @@ async function savePodName(podId) {
     document.getElementById(podId).innerText = newName;
     const podRef = doc(db, "pods", podId);
     await updateDoc(podRef, { name: newName });
+    console.log('Pod name updated successfully');
 }
 
 function addPod() {
@@ -520,21 +540,7 @@ function sortAllClients() {
     document.querySelectorAll('.clients').forEach(column => sortClients(column.id));
 }
 
-// Existing script.js code...
-
 document.addEventListener('DOMContentLoaded', () => {
     loadPods();
     loadClients();
 });
-
-function checkPassword() {
-    const password = document.getElementById('password').value;
-    if (password === 'CoreTrex2020') {
-        document.getElementById('password-section').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
-    } else {
-        alert('Incorrect password');
-    }
-}
-
-// The rest of your existing script.js code...
