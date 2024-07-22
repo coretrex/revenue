@@ -17,24 +17,10 @@ function googleLogin() {
     firebase.auth()
         .signInWithPopup(provider)
         .then((result) => {
-            // This gives you a Google Access Token. You can use it to access the Google API.
-            var token = result.credential.accessToken;
-            // The signed-in user info.
             var user = result.user;
-            
-            // Store user information in Firestore
             storeUserInfo(user);
-
-            // Display user info on the page
-            document.getElementById("user-info").innerHTML = `Hello, ${user.displayName}`;
+            updateUserUI(user);
         }).catch((error) => {
-            // Handle Errors here.
-            var errorCode = error.code;
-            var errorMessage = error.message;
-            // The email of the user's account used.
-            var email = error.email;
-            // The firebase.auth.AuthCredential type that was used.
-            var credential = error.credential;
             console.log(error);
         });
 }
@@ -54,6 +40,34 @@ function storeUserInfo(user) {
         console.error("Error storing user information: ", error);
     });
 }
+
+function updateUserUI(user) {
+    document.getElementById("login-button").classList.add("hidden");
+    const userIcon = document.getElementById("user-icon");
+    userIcon.innerHTML = user.displayName.charAt(0).toUpperCase();
+    userIcon.classList.remove("hidden");
+}
+
+function toggleLogoutButton() {
+    const logoutButton = document.getElementById("logout-button");
+    logoutButton.classList.toggle("hidden");
+}
+
+function logout() {
+    firebase.auth().signOut().then(() => {
+        document.getElementById("login-button").classList.remove("hidden");
+        document.getElementById("user-icon").classList.add("hidden");
+        document.getElementById("logout-button").classList.add("hidden");
+    }).catch((error) => {
+        console.log(error);
+    });
+}
+
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        updateUserUI(user);
+    }
+});
 
 let clientId = 0;
 let totalRevenue = 0;

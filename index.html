@@ -14,8 +14,11 @@
 <body>
     <div class="header">
         <h1>CoreTrex Revenue Dashboard</h1>
-        <button onclick="googleLogin()">Login with Google</button>
-        <div id="user-info"></div>
+        <div class="auth-section">
+            <button id="login-button" onclick="googleLogin()">Login with Google</button>
+            <div id="user-icon" class="hidden" onclick="toggleLogoutButton()"></div>
+            <button id="logout-button" class="hidden" onclick="logout()">Log Out</button>
+        </div>
     </div>
     <div class="revenue-section">
         <div class="primary-metrics">
