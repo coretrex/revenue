@@ -20,7 +20,7 @@
             <button id="logout-button" class="hidden" onclick="logout()">Log Out</button>
         </div>
     </div>
-    <div class="revenue-section">
+    <div class="revenue-section hidden">
         <div class="primary-metrics">
             <h2>ARR: $<span id="annualRevenue">0</span></h2>
             <h2>MRR: $<span id="totalRevenue">0</span></h2>
@@ -42,38 +42,10 @@
         <input type="number" id="clientRetainer" placeholder="Enter Client Retainer">
         <button onclick="addClient()">Add Client</button>
     </div>
-    <div class="container">
+    <div class="container hidden">
         <div class="columns">
-            <div class="column" id="leftColumn">
-                <div class="pod" id="pod1">
-                    <div class="pod-header">
-                        <h2 class="pod-name" id="apexNavigatorsName">Apex Navigators</h2>
-                        <div class="pod-icons">
-                            <button class="edit-name" onclick="editPodName('apexNavigatorsName')">✎</button>
-                        </div>
-                    </div>
-                    <div class="pod-stats">
-                        <span class="podMRR">MRR: $<span>0</span></span>
-                        <span class="podClients">Clients: <span>0</span></span>
-                    </div>
-                    <div class="clients" id="apexNavigatorsClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-                </div>
-            </div>
-            <div class="column" id="rightColumn">
-                <div class="pod" id="pod2">
-                    <div class="pod-header">
-                        <h2 class="pod-name" id="primePioneersName">Prime Pioneers</h2>
-                        <div class="pod-icons">
-                            <button class="edit-name" onclick="editPodName('primePioneersName')">✎</button>
-                        </div>
-                    </div>
-                    <div class="pod-stats">
-                        <span class="podMRR">MRR: $<span>0</span></span>
-                        <span class="podClients">Clients: <span>0</span></span>
-                    </div>
-                    <div class="clients" id="primePioneersClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-                </div>
-            </div>
+            <div class="column" id="leftColumn"></div>
+            <div class="column" id="rightColumn"></div>
         </div>
         <button class="add-pod" onclick="addPod()">+</button>
     </div>
