@@ -53,26 +53,40 @@ function loadUserData(user) {
 
     db.collection("clients").where("userId", "==", user.uid).get()
     .then((querySnapshot) => {
+        console.log("Retrieved client data for user:", user.uid);
         querySnapshot.forEach((doc) => {
             const clientData = doc.data();
-            console.log("Loaded client data:", clientData);
-            const clientDiv = createClientDiv(clientData.id, clientData.name, clientData.retainer);
-            if (clientData.status) {
-                clientDiv.classList.add(clientData.status);
-                if (clientData.status === 'forecast') {
-                    clientDiv.style.color = '#696969';
-                    clientDiv.style.backgroundColor = '#d3d3d3';
+            console.log("Processing client data:", clientData);
+
+            // Check if column exists before appending
+            const column = document.getElementById(clientData.column);
+            if (column) {
+                const clientDiv = createClientDiv(clientData.id, clientData.name, clientData.retainer);
+                clientDiv.id = clientData.id; // Ensure the ID matches the Firestore document ID
+
+                if (clientData.status) {
+                    clientDiv.classList.add(clientData.status);
+                    if (clientData.status === 'forecast') {
+                        clientDiv.style.color = '#696969';
+                        clientDiv.style.backgroundColor = '#d3d3d3';
+                    }
                 }
-            }
-            document.getElementById(clientData.column).appendChild(clientDiv);
-            if (!clientDiv.classList.contains('terminated') && clientData.status !== 'forecast') {
-                totalRevenue += clientData.retainer;
-                totalClients += 1;
-            } else if (clientDiv.classList.contains('forecast')) {
-                forecastRevenue += clientData.retainer;
-                forecastClients += 1;
+
+                column.appendChild(clientDiv);
+
+                // Update metrics based on client status
+                if (!clientDiv.classList.contains('terminated') && clientData.status !== 'forecast') {
+                    totalRevenue += clientData.retainer;
+                    totalClients += 1;
+                } else if (clientDiv.classList.contains('forecast')) {
+                    forecastRevenue += clientData.retainer;
+                    forecastClients += 1;
+                }
+            } else {
+                console.error("Column not found for client data:", clientData);
             }
         });
+
         updateMetrics();
         updatePodMetrics();
         sortAllClients();
@@ -87,7 +101,7 @@ function loadUserData(user) {
         document.getElementById('rightColumn').innerHTML = '';
         querySnapshot.forEach((doc) => {
             const podData = doc.data();
-            console.log("Loaded pod data:", podData);
+            console.log("Processing pod data:", podData);
             const podDiv = document.createElement('div');
             podDiv.classList.add('pod');
             podDiv.id = podData.id;
@@ -125,6 +139,7 @@ function loadUserData(user) {
         console.error("Error getting pod data:", error);
     });
 }
+
 
 function updateUserUI(user) {
     console.log("Updating UI for user:", user.displayName);
