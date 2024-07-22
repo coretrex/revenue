@@ -52,6 +52,7 @@ function loadUserData(user) {
     .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
             const clientData = doc.data();
+            console.log("Loading client data: ", clientData); // Debugging log
             const clientDiv = createClientDiv(clientData.id, clientData.name, clientData.retainer);
             if (clientData.status) {
                 clientDiv.classList.add(clientData.status);
@@ -83,6 +84,7 @@ function loadUserData(user) {
         document.getElementById('rightColumn').innerHTML = '';
         querySnapshot.forEach((doc) => {
             const podData = doc.data();
+            console.log("Loading pod data: ", podData); // Debugging log
             const podDiv = document.createElement('div');
             podDiv.classList.add('pod');
             podDiv.id = podData.id;
@@ -151,9 +153,12 @@ function logout() {
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
+        console.log("User is logged in: ", user); // Debugging log
         currentUser = user;
         loadUserData(user);
         updateUserUI(user);
+    } else {
+        console.log("No user is logged in"); // Debugging log
     }
 });
 
