@@ -28,9 +28,25 @@ let forecastRevenue = 0;
 let forecastClients = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
+    document.getElementById('submitPassword').addEventListener('click', checkPassword);
     loadPods();
     loadClients();
 });
+
+function checkPassword() {
+    console.log('Check password function called');
+    const password = document.getElementById('password').value;
+    console.log('Entered password:', password);
+    if (password === 'CoreTrex2020') {
+        console.log('Password correct');
+        document.getElementById('password-section').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+    } else {
+        console.log('Password incorrect');
+        alert('Incorrect password');
+    }
+}
 
 function addClientToPod(podId) {
     const pod = document.getElementById(podId).closest('.pod');
@@ -517,19 +533,4 @@ function sortClients(columnId) {
 
 function sortAllClients() {
     document.querySelectorAll('.clients').forEach(column => sortClients(column.id));
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadPods();
-    loadClients();
-});
-
-function checkPassword() {
-    const password = document.getElementById('password').value;
-    if (password === 'CoreTrex2020') {
-        document.getElementById('password-section').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
-    } else {
-        alert('Incorrect password');
-    }
 }
