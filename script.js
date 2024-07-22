@@ -19,12 +19,13 @@ function googleLogin() {
     firebase.auth()
         .signInWithPopup(provider)
         .then((result) => {
+            console.log("Google sign-in successful:", result);
             currentUser = result.user;
             storeUserInfo(currentUser);
             loadUserData(currentUser);
             updateUserUI(currentUser);
         }).catch((error) => {
-            console.log(error);
+            console.error("Error during Google sign-in:", error);
         });
 }
 
@@ -40,7 +41,7 @@ function storeUserInfo(user) {
         console.log("User information successfully stored!");
     })
     .catch((error) => {
-        console.error("Error storing user information: ", error);
+        console.error("Error storing user information:", error);
     });
 }
 
@@ -48,11 +49,13 @@ function loadUserData(user) {
     var db = firebase.firestore();
     resetMetrics(); // Clear previous metrics
 
+    console.log("Loading user data for user:", user.uid);
+
     db.collection("clients").where("userId", "==", user.uid).get()
     .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
             const clientData = doc.data();
-            console.log("Loading client data: ", clientData); // Debugging log
+            console.log("Loaded client data:", clientData);
             const clientDiv = createClientDiv(clientData.id, clientData.name, clientData.retainer);
             if (clientData.status) {
                 clientDiv.classList.add(clientData.status);
@@ -75,7 +78,7 @@ function loadUserData(user) {
         sortAllClients();
     })
     .catch((error) => {
-        console.log("Error getting client data:", error);
+        console.error("Error getting client data:", error);
     });
 
     db.collection("pods").where("userId", "==", user.uid).get()
@@ -84,7 +87,7 @@ function loadUserData(user) {
         document.getElementById('rightColumn').innerHTML = '';
         querySnapshot.forEach((doc) => {
             const podData = doc.data();
-            console.log("Loading pod data: ", podData); // Debugging log
+            console.log("Loaded pod data:", podData);
             const podDiv = document.createElement('div');
             podDiv.classList.add('pod');
             podDiv.id = podData.id;
@@ -119,11 +122,12 @@ function loadUserData(user) {
         });
     })
     .catch((error) => {
-        console.log("Error getting pod data:", error);
+        console.error("Error getting pod data:", error);
     });
 }
 
 function updateUserUI(user) {
+    console.log("Updating UI for user:", user.displayName);
     document.getElementById("login-button").classList.add("hidden");
     document.querySelectorAll('.hidden').forEach(element => element.classList.remove('hidden'));
     const userIcon = document.getElementById("user-icon");
@@ -139,6 +143,7 @@ function toggleLogoutButton() {
 function logout() {
     firebase.auth().signOut().then(() => {
         currentUser = null;
+        console.log("User logged out");
         document.querySelectorAll('.hidden').forEach(element => element.classList.add('hidden'));
         document.getElementById("login-button").classList.remove("hidden");
         document.getElementById("user-icon").classList.add("hidden");
@@ -147,18 +152,18 @@ function logout() {
         document.getElementById("rightColumn").innerHTML = '';
         resetMetrics();
     }).catch((error) => {
-        console.log(error);
+        console.error("Error during logout:", error);
     });
 }
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        console.log("User is logged in: ", user); // Debugging log
+        console.log("User is logged in:", user);
         currentUser = user;
         loadUserData(user);
         updateUserUI(user);
     } else {
-        console.log("No user is logged in"); // Debugging log
+        console.log("No user is logged in");
     }
 });
 
@@ -215,7 +220,7 @@ function addClientToPod(podId) {
 
 function saveClientData(clientDiv, podId) {
     const db = firebase.firestore();
-    db.collection("clients").doc(clientDiv.id).set({
+    const clientData = {
         id: clientDiv.id,
         name: clientDiv.querySelector('.client-info').textContent,
         retainer: parseFloat(clientDiv.querySelector('.client-details').textContent.replace('$', '').replace(/,/g, '')),
@@ -225,12 +230,14 @@ function saveClientData(clientDiv, podId) {
             clientDiv.classList.contains('forecast') ? 'forecast' : '',
         column: podId,
         userId: currentUser.uid
-    }, { merge: true })
+    };
+    console.log("Saving client data:", clientData); // Debugging log
+    db.collection("clients").doc(clientDiv.id).set(clientData, { merge: true })
     .then(() => {
         console.log("Client information successfully stored!");
     })
     .catch((error) => {
-        console.error("Error storing client information: ", error);
+        console.error("Error storing client information:", error);
     });
 }
 
@@ -288,7 +295,7 @@ function deleteClient(clientId, clientRetainer) {
     .then(() => {
         console.log("Client successfully deleted!");
     }).catch((error) => {
-        console.error("Error removing client: ", error);
+        console.error("Error removing client:", error);
     });
 
     if (clientDiv.classList.contains('solid')) totalSolid -= 1;
@@ -396,6 +403,7 @@ function changeStatus(clientId, status) {
 }
 
 function updateMetrics() {
+    console.log("Updating metrics");
     document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
     document.getElementById('annualRevenue').innerText = (totalRevenue * 12).toLocaleString();
     document.getElementById('totalClients').innerText = totalClients.toLocaleString();
@@ -424,6 +432,7 @@ function updateMetrics() {
 }
 
 function updatePodMetrics() {
+    console.log("Updating pod metrics");
     document.querySelectorAll('.pod').forEach(pod => {
         let podRevenue = 0;
         let podSolid = 0;
@@ -460,7 +469,7 @@ function deletePod(podId) {
         .then(() => {
             console.log("Client successfully deleted!");
         }).catch((error) => {
-            console.error("Error removing client: ", error);
+            console.error("Error removing client:", error);
         });
 
         if (!client.classList.contains('terminated') && !client.classList.contains('forecast')) {
@@ -482,7 +491,7 @@ function deletePod(podId) {
     .then(() => {
         console.log("Pod successfully deleted!");
     }).catch((error) => {
-        console.error("Error removing pod: ", error);
+        console.error("Error removing pod:", error);
     });
 
     pod.remove();
@@ -507,7 +516,7 @@ function savePods() {
             console.log("Pod information successfully stored!");
         })
         .catch((error) => {
-            console.error("Error storing pod information: ", error);
+            console.error("Error storing pod information:", error);
         });
     });
 }
@@ -588,6 +597,7 @@ function sortAllClients() {
 }
 
 function resetMetrics() {
+    console.log("Resetting metrics");
     totalRevenue = 0;
     mrrRiskRevenue = 0;
     totalClients = 0;
