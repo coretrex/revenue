@@ -46,6 +46,8 @@ function storeUserInfo(user) {
 
 function loadUserData(user) {
     var db = firebase.firestore();
+    resetMetrics(); // Clear previous metrics
+
     db.collection("clients").where("userId", "==", user.uid).get()
     .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
