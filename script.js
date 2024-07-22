@@ -219,6 +219,10 @@ function addClientToPod(podId) {
 }
 
 function saveClientData(clientDiv, podId) {
+    if (!currentUser) {
+        console.error("No user is currently logged in. Cannot save client data.");
+        return;
+    }
     const db = firebase.firestore();
     const clientData = {
         id: clientDiv.id,
@@ -231,13 +235,13 @@ function saveClientData(clientDiv, podId) {
         column: podId,
         userId: currentUser.uid
     };
-    console.log("Saving client data:", clientData); // Debugging log
+    console.log("Saving client data to Firestore:", clientData); // Debugging log
     db.collection("clients").doc(clientDiv.id).set(clientData, { merge: true })
     .then(() => {
-        console.log("Client information successfully stored!");
+        console.log("Client information successfully stored in Firestore!");
     })
     .catch((error) => {
-        console.error("Error storing client information:", error);
+        console.error("Error storing client information in Firestore:", error);
     });
 }
 
