@@ -1,5 +1,9 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, get, child } from "firebase/database";
+
 // Your web app's Firebase configuration
-var firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyCUKkOjTS4jrL5ioUN9PKtWppca6Hzjbn4",
     authDomain: "coretrex-revenue.firebaseapp.com",
     projectId: "coretrex-revenue",
@@ -8,179 +12,10 @@ var firebaseConfig = {
     appId: "1:918994189710:web:f06cfc46179b43ed4638df",
     measurementId: "G-MFYT73882K"
 };
+
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-
-let currentUser = null;
-
-function googleLogin() {
-    var provider = new firebase.auth.GoogleAuthProvider();
-
-    firebase.auth()
-        .signInWithPopup(provider)
-        .then((result) => {
-            console.log("Google sign-in successful:", result);
-            currentUser = result.user;
-            storeUserInfo(currentUser);
-            loadUserData(currentUser);
-            updateUserUI(currentUser);
-        }).catch((error) => {
-            console.error("Error during Google sign-in:", error);
-        });
-}
-
-function storeUserInfo(user) {
-    var db = firebase.firestore();
-    db.collection("users").doc(user.uid).set({
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        profilePicture: user.photoURL
-    }, { merge: true })
-    .then(() => {
-        console.log("User information successfully stored!");
-    })
-    .catch((error) => {
-        console.error("Error storing user information:", error);
-    });
-}
-
-function loadUserData(user) {
-    var db = firebase.firestore();
-    resetMetrics(); // Clear previous metrics
-
-    console.log("Loading user data for user:", user.uid);
-
-    db.collection("clients").where("userId", "==", user.uid).get()
-    .then((querySnapshot) => {
-        console.log("Retrieved client data for user:", user.uid);
-        querySnapshot.forEach((doc) => {
-            const clientData = doc.data();
-            console.log("Processing client data:", clientData);
-
-            // Check if column exists before appending
-            const column = document.getElementById(clientData.column);
-            if (column) {
-                const clientDiv = createClientDiv(clientData.id, clientData.name, clientData.retainer);
-                clientDiv.id = clientData.id; // Ensure the ID matches the Firestore document ID
-
-                if (clientData.status) {
-                    clientDiv.classList.add(clientData.status);
-                    if (clientData.status === 'forecast') {
-                        clientDiv.style.color = '#696969';
-                        clientDiv.style.backgroundColor = '#d3d3d3';
-                    }
-                }
-
-                column.appendChild(clientDiv);
-
-                // Update metrics based on client status
-                if (!clientDiv.classList.contains('terminated') && clientData.status !== 'forecast') {
-                    totalRevenue += clientData.retainer;
-                    totalClients += 1;
-                } else if (clientDiv.classList.contains('forecast')) {
-                    forecastRevenue += clientData.retainer;
-                    forecastClients += 1;
-                }
-            } else {
-                console.error("Column not found for client data:", clientData);
-            }
-        });
-
-        updateMetrics();
-        updatePodMetrics();
-        sortAllClients();
-    })
-    .catch((error) => {
-        console.error("Error getting client data:", error);
-    });
-
-    db.collection("pods").where("userId", "==", user.uid).get()
-    .then((querySnapshot) => {
-        document.getElementById('leftColumn').innerHTML = '';
-        document.getElementById('rightColumn').innerHTML = '';
-        querySnapshot.forEach((doc) => {
-            const podData = doc.data();
-            console.log("Processing pod data:", podData);
-            const podDiv = document.createElement('div');
-            podDiv.classList.add('pod');
-            podDiv.id = podData.id;
-            podDiv.innerHTML = `
-                <div class="pod-header">
-                    <h2 class="pod-name" id="${podData.id}Name">${podData.name}</h2>
-                    <div class="pod-icons">
-                        <button class="edit-name" onclick="editPodName('${podData.id}Name')">✎</button>
-                    </div>
-                </div>
-                <div class="pod-stats">
-                    <span class="podMRR">MRR: $<span>0</span></span>
-                    <span class="podClients">Clients: <span>0</span></span>
-                </div>
-                <div class="clients" id="${podData.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-                <div class="input-section">
-                    <input type="text" class="clientName" placeholder="Enter Client Name">
-                    <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
-                    <button onclick="addClientToPod('${podData.clientsId}')">Add Client</button>
-                </div>
-                <button class="delete-pod" onclick="deletePod('${podData.id}')">🗑️</button>
-            `;
-            const leftColumn = document.getElementById('leftColumn');
-            const rightColumn = document.getElementById('rightColumn');
-            if (leftColumn.children.length <= rightColumn.children.length) {
-                leftColumn.appendChild(podDiv);
-            } else {
-                rightColumn.appendChild(podDiv);
-            }
-            podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
-            podDiv.querySelector('.clients').addEventListener('drop', drop);
-        });
-    })
-    .catch((error) => {
-        console.error("Error getting pod data:", error);
-    });
-}
-
-
-function updateUserUI(user) {
-    console.log("Updating UI for user:", user.displayName);
-    document.getElementById("login-button").classList.add("hidden");
-    document.querySelectorAll('.hidden').forEach(element => element.classList.remove('hidden'));
-    const userIcon = document.getElementById("user-icon");
-    userIcon.innerHTML = user.displayName.charAt(0).toUpperCase();
-    userIcon.classList.remove("hidden");
-}
-
-function toggleLogoutButton() {
-    const logoutButton = document.getElementById("logout-button");
-    logoutButton.classList.toggle("hidden");
-}
-
-function logout() {
-    firebase.auth().signOut().then(() => {
-        currentUser = null;
-        console.log("User logged out");
-        document.querySelectorAll('.hidden').forEach(element => element.classList.add('hidden'));
-        document.getElementById("login-button").classList.remove("hidden");
-        document.getElementById("user-icon").classList.add("hidden");
-        document.getElementById("logout-button").classList.add("hidden");
-        document.getElementById("leftColumn").innerHTML = '';
-        document.getElementById("rightColumn").innerHTML = '';
-        resetMetrics();
-    }).catch((error) => {
-        console.error("Error during logout:", error);
-    });
-}
-
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        console.log("User is logged in:", user);
-        currentUser = user;
-        loadUserData(user);
-        updateUserUI(user);
-    } else {
-        console.log("No user is logged in");
-    }
-});
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 let clientId = 0;
 let totalRevenue = 0;
@@ -192,12 +27,12 @@ let totalTerminated = 0;
 let forecastRevenue = 0;
 let forecastClients = 0;
 
-function addClientToPod(podId) {
-    if (!currentUser) {
-        alert('You must be logged in to add clients.');
-        return;
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    loadPods();
+    loadClients();
+});
 
+function addClientToPod(podId) {
     const pod = document.getElementById(podId).closest('.pod');
     const clientNameInput = pod.querySelector('.clientName');
     const clientRetainerInput = pod.querySelector('.clientRetainer');
@@ -225,39 +60,15 @@ function addClientToPod(podId) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClientData(clientDiv, podId);
+        saveClients();
+        savePods();
+        sortClients(podId);
+
         clientNameInput.value = '';
         clientRetainerInput.value = '';
     } else {
         alert('Please enter client name and retainer.');
     }
-}
-
-function saveClientData(clientDiv, podId) {
-    if (!currentUser) {
-        console.error("No user is currently logged in. Cannot save client data.");
-        return;
-    }
-    const db = firebase.firestore();
-    const clientData = {
-        id: clientDiv.id,
-        name: clientDiv.querySelector('.client-info').textContent,
-        retainer: parseFloat(clientDiv.querySelector('.client-details').textContent.replace('$', '').replace(/,/g, '')),
-        status: clientDiv.classList.contains('solid') ? 'solid' :
-            clientDiv.classList.contains('risk') ? 'risk' :
-            clientDiv.classList.contains('terminated') ? 'terminated' :
-            clientDiv.classList.contains('forecast') ? 'forecast' : '',
-        column: podId,
-        userId: currentUser.uid
-    };
-    console.log("Saving client data to Firestore:", clientData); // Debugging log
-    db.collection("clients").doc(clientDiv.id).set(clientData, { merge: true })
-    .then(() => {
-        console.log("Client information successfully stored in Firestore!");
-    })
-    .catch((error) => {
-        console.error("Error storing client information in Firestore:", error);
-    });
 }
 
 function createClientDiv(id, name, retainer) {
@@ -302,21 +113,14 @@ function drop(event) {
     if (target) {
         target.appendChild(clientDiv);
         updatePodMetrics();
-        saveClientData(clientDiv, target.id);
+        saveClients();
+        savePods();
+        sortClients(target.id);
     }
 }
 
 function deleteClient(clientId, clientRetainer) {
     const clientDiv = document.getElementById(clientId);
-    const db = firebase.firestore();
-
-    db.collection("clients").doc(clientId).delete()
-    .then(() => {
-        console.log("Client successfully deleted!");
-    }).catch((error) => {
-        console.error("Error removing client:", error);
-    });
-
     if (clientDiv.classList.contains('solid')) totalSolid -= 1;
     else if (clientDiv.classList.contains('risk')) {
         totalRisk -= 1;
@@ -332,6 +136,8 @@ function deleteClient(clientId, clientRetainer) {
     clientDiv.remove();
     updateMetrics();
     updatePodMetrics();
+    saveClients();
+    savePods();
 }
 
 function editClient(clientId, oldRetainer) {
@@ -368,7 +174,9 @@ function saveClient(clientId, oldRetainer) {
         }
         updateMetrics();
         updatePodMetrics();
-        saveClientData(clientDiv, clientDiv.closest('.clients').id);
+        saveClients();
+        savePods();
+        sortClients(clientDiv.closest('.clients').id);
     } else {
         alert('Please enter client name and retainer.');
     }
@@ -418,11 +226,12 @@ function changeStatus(clientId, status) {
 
     updateMetrics();
     updatePodMetrics();
-    saveClientData(clientDiv, clientDiv.closest('.clients').id);
+    saveClients();
+    savePods();
+    sortClients(clientDiv.closest('.clients').id);
 }
 
 function updateMetrics() {
-    console.log("Updating metrics");
     document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
     document.getElementById('annualRevenue').innerText = (totalRevenue * 12).toLocaleString();
     document.getElementById('totalClients').innerText = totalClients.toLocaleString();
@@ -451,7 +260,6 @@ function updateMetrics() {
 }
 
 function updatePodMetrics() {
-    console.log("Updating pod metrics");
     document.querySelectorAll('.pod').forEach(pod => {
         let podRevenue = 0;
         let podSolid = 0;
@@ -479,18 +287,9 @@ function updatePodMetrics() {
 function deletePod(podId) {
     const pod = document.getElementById(podId);
     const clients = pod.querySelectorAll('.client');
-    const db = firebase.firestore();
-
     clients.forEach(client => {
         const clientDetails = client.querySelector('.client-details').textContent;
         const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
-        db.collection("clients").doc(client.id).delete()
-        .then(() => {
-            console.log("Client successfully deleted!");
-        }).catch((error) => {
-            console.error("Error removing client:", error);
-        });
-
         if (!client.classList.contains('terminated') && !client.classList.contains('forecast')) {
             totalRevenue -= retainer;
             totalClients -= 1;
@@ -505,38 +304,146 @@ function deletePod(podId) {
         else if (client.classList.contains('risk')) totalRisk -= 1;
         else if (client.classList.contains('terminated')) totalTerminated -= 1;
     });
-
-    db.collection("pods").doc(podId).delete()
-    .then(() => {
-        console.log("Pod successfully deleted!");
-    }).catch((error) => {
-        console.error("Error removing pod:", error);
-    });
-
     pod.remove();
     updateMetrics();
     updatePodMetrics();
+    saveClients();
+    savePods();
+}
+
+function saveClients() {
+    const clients = [];
+    document.querySelectorAll('.client').forEach(clientDiv => {
+        const clientId = clientDiv.id;
+        const clientName = clientDiv.querySelector('.client-info').textContent;
+        const clientDetails = clientDiv.querySelector('.client-details').textContent;
+        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
+        const status = clientDiv.classList.contains('solid') ? 'solid' :
+            clientDiv.classList.contains('risk') ? 'risk' :
+            clientDiv.classList.contains('terminated') ? 'terminated' :
+            clientDiv.classList.contains('forecast') ? 'forecast' : '';
+        const column = clientDiv.closest('.clients').id;
+        const podName = clientDiv.closest('.pod').querySelector('.pod-name').innerText;
+
+        clients.push({ id: clientId, name: clientName, retainer, status, column, podName });
+    });
+
+    set(ref(db, 'clients'), clients);
+    set(ref(db, 'metrics'), {
+        totalRevenue,
+        mrrRiskRevenue,
+        totalClients,
+        totalSolid,
+        totalRisk,
+        totalTerminated,
+        forecastRevenue,
+        forecastClients
+    });
+}
+
+function loadClients() {
+    get(child(ref(db), 'clients')).then(snapshot => {
+        if (snapshot.exists()) {
+            const clients = snapshot.val();
+            if (clients) {
+                clients.forEach(client => {
+                    const clientDiv = createClientDiv(client.id, client.name, client.retainer);
+                    if (client.status) {
+                        clientDiv.classList.add(client.status);
+                        if (client.status === 'forecast') {
+                            clientDiv.style.color = '#696969';
+                            clientDiv.style.backgroundColor = '#d3d3d3';
+                        }
+                    }
+                    document.getElementById(client.column).appendChild(clientDiv);
+                    if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
+                        totalRevenue += client.retainer;
+                        totalClients += 1;
+                    } else if (clientDiv.classList.contains('forecast')) {
+                        forecastRevenue += client.retainer;
+                        forecastClients += 1;
+                    }
+                });
+                clientId = clients.length;
+                updateMetrics();
+                updatePodMetrics();
+                sortAllClients();
+            }
+        }
+    });
+
+    get(child(ref(db), 'metrics')).then(snapshot => {
+        if (snapshot.exists()) {
+            const metrics = snapshot.val();
+            if (metrics) {
+                totalRevenue = metrics.totalRevenue;
+                mrrRiskRevenue = metrics.mrrRiskRevenue;
+                totalClients = metrics.totalClients;
+                totalSolid = metrics.totalSolid;
+                totalRisk = metrics.totalRisk;
+                totalTerminated = metrics.totalTerminated;
+                forecastRevenue = metrics.forecastRevenue;
+                forecastClients = metrics.forecastClients;
+                updateMetrics();
+                updatePodMetrics();
+            }
+        }
+    });
 }
 
 function savePods() {
-    const db = firebase.firestore();
+    const pods = [];
     document.querySelectorAll('.pod').forEach(pod => {
         const podId = pod.id;
         const podName = pod.querySelector('.pod-name').innerText;
         const podClientsId = pod.querySelector('.clients').id;
+        pods.push({ id: podId, name: podName, clientsId: podClientsId });
+    });
+    set(ref(db, 'pods'), pods);
+}
 
-        db.collection("pods").doc(podId).set({
-            id: podId,
-            name: podName,
-            clientsId: podClientsId,
-            userId: currentUser.uid
-        }, { merge: true })
-        .then(() => {
-            console.log("Pod information successfully stored!");
-        })
-        .catch((error) => {
-            console.error("Error storing pod information:", error);
-        });
+function loadPods() {
+    get(child(ref(db), 'pods')).then(snapshot => {
+        if (snapshot.exists()) {
+            const pods = snapshot.val();
+            if (pods) {
+                document.getElementById('leftColumn').innerHTML = '';
+                document.getElementById('rightColumn').innerHTML = '';
+                pods.forEach(pod => {
+                    const podDiv = document.createElement('div');
+                    podDiv.classList.add('pod');
+                    podDiv.id = pod.id;
+                    podDiv.innerHTML = `
+                        <div class="pod-header">
+                            <h2 class="pod-name" id="${pod.id}Name">${pod.name}</h2>
+                            <div class="pod-icons">
+                                <button class="edit-name" onclick="editPodName('${pod.id}Name')">✎</button>
+                            </div>
+                        </div>
+                        <div class="pod-stats">
+                            <span class="podMRR">MRR: $<span>0</span></span>
+                            <span class="podClients">Clients: <span>0</span></span>
+                        </div>
+                        <div class="clients" id="${pod.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        <div class="input-section">
+                            <input type="text" class="clientName" placeholder="Enter Client Name">
+                            <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
+                            <button onclick="addClientToPod('${pod.clientsId}')">Add Client</button>
+                        </div>
+                        <button class="delete-pod" onclick="deletePod('${pod.id}')">🗑️</button>
+                    `;
+                    const leftColumn = document.getElementById('leftColumn');
+                    const rightColumn = document.getElementById('rightColumn');
+                    if (leftColumn.children.length <= rightColumn.children.length) {
+                        leftColumn.appendChild(podDiv);
+                    } else {
+                        rightColumn.appendChild(podDiv);
+                    }
+                    podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
+                    podDiv.querySelector('.clients').addEventListener('drop', drop);
+                });
+            }
+        }
     });
 }
 
@@ -555,11 +462,6 @@ function savePodName(podId) {
 }
 
 function addPod() {
-    if (!currentUser) {
-        alert('You must be logged in to add pods.');
-        return;
-    }
-
     const leftColumn = document.getElementById('leftColumn');
     const rightColumn = document.getElementById('rightColumn');
     const newPodId = `pod${document.querySelectorAll('.pod').length + 1}`;
@@ -594,11 +496,13 @@ function addPod() {
         rightColumn.appendChild(podDiv);
     }
 
+    // Ensure the new pod can handle drag and drop
     const newClientsDiv = document.getElementById(newClientsId);
     newClientsDiv.addEventListener('dragover', allowDrop);
     newClientsDiv.addEventListener('drop', drop);
 
     savePods();
+    saveClients();
 }
 
 function sortClients(columnId) {
@@ -615,15 +519,17 @@ function sortAllClients() {
     document.querySelectorAll('.clients').forEach(column => sortClients(column.id));
 }
 
-function resetMetrics() {
-    console.log("Resetting metrics");
-    totalRevenue = 0;
-    mrrRiskRevenue = 0;
-    totalClients = 0;
-    totalSolid = 0;
-    totalRisk = 0;
-    totalTerminated = 0;
-    forecastRevenue = 0;
-    forecastClients = 0;
-    updateMetrics();
+document.addEventListener('DOMContentLoaded', () => {
+    loadPods();
+    loadClients();
+});
+
+function checkPassword() {
+    const password = document.getElementById('password').value;
+    if (password === 'CoreTrex2020') {
+        document.getElementById('password-section').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+    } else {
+        alert('Incorrect password');
+    }
 }
