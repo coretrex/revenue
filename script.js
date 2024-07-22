@@ -3,7 +3,7 @@ var firebaseConfig = {
     apiKey: "AIzaSyCUKkOjTS4jrL5ioUN9PKtWppca6Hzjbn4",
     authDomain: "coretrex-revenue.firebaseapp.com",
     projectId: "coretrex-revenue",
-    storageBucket: "coretrex-revenue",
+    storageBucket: "coretrex-revenue.appspot.com",
     messagingSenderId: "918994189710",
     appId: "1:918994189710:web:f06cfc46179b43ed4638df",
     measurementId: "G-MFYT73882K"
@@ -141,6 +141,7 @@ function logout() {
         document.getElementById("logout-button").classList.add("hidden");
         document.getElementById("leftColumn").innerHTML = '';
         document.getElementById("rightColumn").innerHTML = '';
+        resetMetrics();
     }).catch((error) => {
         console.log(error);
     });
@@ -577,4 +578,16 @@ function sortClients(columnId) {
 
 function sortAllClients() {
     document.querySelectorAll('.clients').forEach(column => sortClients(column.id));
+}
+
+function resetMetrics() {
+    totalRevenue = 0;
+    mrrRiskRevenue = 0;
+    totalClients = 0;
+    totalSolid = 0;
+    totalRisk = 0;
+    totalTerminated = 0;
+    forecastRevenue = 0;
+    forecastClients = 0;
+    updateMetrics();
 }
