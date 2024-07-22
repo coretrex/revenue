@@ -1,17 +1,15 @@
-/* Importing Google Fonts */
+/* styles.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
-/* Basic resets and background setup */
 body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     background: linear-gradient(135deg, #000428 0%, #004e92 100%);
 }
 
-/* Header styling */
 .header {
-    position: relative;
-    padding: 20px 0;
+    padding: 0px;
+    marging-bottom: 0px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     width: 100%;
     top: 0;
@@ -26,19 +24,6 @@ body {
     margin-bottom: 10px;
     font-size: 3em; /* Large font size */
 }
-
-/* Login icon in the header */
-.login-icon {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    color: white;
-    font-size: 24px;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-/* Revenue section styling */
 .revenue-section {
     text-align: center;
     margin-bottom: 20px;
@@ -56,20 +41,54 @@ body {
 }
 
 .revenue-section h2.risk {
-    color: #F08B01; /* Orange for risks */
+    color: #F08B01;
+}
+
+.drop-zone {
+    min-height: 50px;
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    margin-top: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hidden {
+    display: none !important;
 }
 
 .revenue-section h2.terminated {
-    color: #D25E5E; /* Red for terminated */
+    color: #D25E5E;
 }
 
-/* Forecast metrics styling */
-.revenue-section h2.forecast {
-    color: #808080; /* Grey color */
-    font-size: 16px;
+.input-section {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    padding-top: 10px; /* Increased padding */
 }
 
-/* Container and column layout */
+input, button {
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
 .container {
     display: flex;
     justify-content: space-between;
@@ -95,7 +114,6 @@ body {
     height: 100%;
 }
 
-/* Pod styling */
 .pod {
     background-color: #fff;
     padding: 10px;
@@ -104,6 +122,29 @@ body {
     position: relative;
     height: 700px;
     overflow-y: scroll; /* Allow vertical scrolling */
+}
+
+.pod::-webkit-scrollbar {
+    width: 4px; /* Width of the scrollbar */
+}
+
+.pod::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Color of the scrollbar track */
+}
+
+.pod::-webkit-scrollbar-thumb {
+    background: #888; /* Color of the scrollbar thumb */
+    border-radius: 7px; /* Rounded corners for the scrollbar thumb */
+}
+
+.pod::-webkit-scrollbar-thumb:hover {
+    background: #555; /* Color of the scrollbar thumb on hover */
+}
+
+/* For Firefox */
+.pod {
+    scrollbar-width: thin; /* Thin scrollbar width */
+    scrollbar-color: #888 #f1f1f1; /* Scrollbar thumb and track color */
 }
 
 .pod-header {
@@ -131,21 +172,151 @@ body {
     padding-bottom: 15px;
 }
 
-/* Button styling */
-button {
-    background-color: #007bff;
-    color: #fff;
+.primary-metrics, .forecast-metrics {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.revenue-section h2.forecast {
+    color: #808080; /* Grey color */
+    font-size: 16px;
+}
+
+.pod-stats span {
+    margin-right: 10px;
+}
+
+.edit-name {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.delete-pod {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 18px;
+    position: left;
+    bottom: 10px;
+    right: 10px;
+}
+
+/* Add this CSS for the "Forecast" status */
+.client.forecast {
+    background-color: #d3d3d3; /* Grey background */
+    color: #696969; /* Dark grey text */
+}
+
+.clients {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden; /* Remove the scrollbar */
+}
+
+.client {
+    padding: 5px;
+    border-radius: 5px;
+    cursor: grab;
+    user-select: none;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Remove the scrollbar */
+}
+
+.client.solid {
+    background-color: #004085;
+    color: white;
+    outline: 2px solid white;
+}
+
+.client.solid .client-details,
+.client.solid .delete svg {
+    color: white;
+    fill: white;
+}
+
+.client.risk {
+    background-color: #FAD48A;
+    color: #856404;
+}
+
+.client.terminated {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.client-info {
+    font-weight: bold;
+    margin-right: 10px;
+    padding-left:10px;
+}
+
+.client-details {
+    font-size: 0.8em;
+    color: #666;
+    margin-right: 10px;
+}
+
+.client .status-buttons {
+    display: flex;
+    gap: 5px;
+    margin-right: 10px;
+}
+
+.client .status-button {
+    padding: 5px 10px;
+    border-radius: 5px;
     border: none;
     cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
 }
 
-button:hover {
-    background-color: #0056b3;
+.client .status-button.solid {
+    background-color: #004085;
+    color: white;
+    outline: 2px solid white;
 }
 
-/* Add-pod button specific styling */
+.client .status-button.risk {
+    background-color: #ffeeba;
+    color: #856404;
+}
+
+.client .status-button.terminated {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.client .edit {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.client .edit:hover {
+    color: #0a800;
+}
+
+.client .delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.client .delete:hover {
+    color: #c82333;
+}
+
 .add-pod {
     background-color: #28a745;
     color: white;

@@ -1,34 +1,58 @@
-// Firebase configuration and initialization
-import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCUKkOjTS4jrL5ioUN9PKtWppca6Hzjbn4",
-  authDomain: "coretrex-revenue.firebaseapp.com",
-  projectId: "coretrex-revenue",
-  storageBucket: "coretrex-revenue.appspot.com",
-  messagingSenderId: "918994189710",
-  appId: "1:918994189710:web:f06cfc46179b43ed4638df",
-  measurementId: "G-MFYT73882K"
+// Your web app's Firebase configuration
+var firebaseConfig = {
+    apiKey: "AIzaSyCUKkOjTS4jrL5ioUN9PKtWppca6Hzjbn4",
+    authDomain: "coretrex-revenue.firebaseapp.com",
+    projectId: "coretrex-revenue",
+    storageBucket: "coretrex-revenue",
+    messagingSenderId: "918994189710",
+    appId: "1:918994189710:web:f06cfc46179b43ed4638df",
+    measurementId: "G-MFYT73882K"
 };
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+function googleLogin() {
+    var provider = new firebase.auth.GoogleAuthProvider();
 
-// Google Authentication for login
-function loginUser() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
+    firebase.auth()
+        .signInWithPopup(provider)
         .then((result) => {
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            var token = result.credential.accessToken;
             // The signed-in user info.
-            const user = result.user;
-            console.log("User signed in: ", user.displayName);
-            // Update UI or state as needed
+            var user = result.user;
+            
+            // Store user information in Firestore
+            storeUserInfo(user);
+
+            // Display user info on the page
+            document.getElementById("user-info").innerHTML = `Hello, ${user.displayName}`;
         }).catch((error) => {
-            console.error("Login failed: ", error.message);
+            // Handle Errors here.
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // The email of the user's account used.
+            var email = error.email;
+            // The firebase.auth.AuthCredential type that was used.
+            var credential = error.credential;
+            console.log(error);
         });
+}
+
+function storeUserInfo(user) {
+    var db = firebase.firestore();
+    db.collection("users").doc(user.uid).set({
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        profilePicture: user.photoURL
+    })
+    .then(() => {
+        console.log("User information successfully stored!");
+    })
+    .catch((error) => {
+        console.error("Error storing user information: ", error);
+    });
 }
 
 let clientId = 0;
@@ -42,7 +66,6 @@ let forecastRevenue = 0;
 let forecastClients = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('loginButton').addEventListener('click', loginUser);
     loadPods();
     loadClients();
 });

@@ -5,11 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoreTrex Revenue Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <div class="header">
         <h1>CoreTrex Revenue Dashboard</h1>
-        <a href="#" class="login-icon" onclick="loginUser()">🔑 Login</a>
+        <button onclick="googleLogin()">Login with Google</button>
+        <div id="user-info"></div>
     </div>
     <div class="revenue-section">
         <div class="primary-metrics">
@@ -28,20 +34,45 @@
             <h2 class="forecast">Forecast Clients: <span id="forecastClients">0</span></h2>
         </div>
     </div>
+    <div class="input-section hidden">
+        <input type="text" id="clientName" placeholder="Enter Client Name">
+        <input type="number" id="clientRetainer" placeholder="Enter Client Retainer">
+        <button onclick="addClient()">Add Client</button>
+    </div>
     <div class="container">
         <div class="columns">
             <div class="column" id="leftColumn">
-                <!-- Pod management areas -->
+                <div class="pod" id="pod1">
+                    <div class="pod-header">
+                        <h2 class="pod-name" id="apexNavigatorsName">Apex Navigators</h2>
+                        <div class="pod-icons">
+                            <button class="edit-name" onclick="editPodName('apexNavigatorsName')">✎</button>
+                        </div>
+                    </div>
+                    <div class="pod-stats">
+                        <span class="podMRR">MRR: $<span>0</span></span>
+                        <span class="podClients">Clients: <span>0</span></span>
+                    </div>
+                    <div class="clients" id="apexNavigatorsClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
             </div>
             <div class="column" id="rightColumn">
-                <!-- Pod management areas -->
+                <div class="pod" id="pod2">
+                    <div class="pod-header">
+                        <h2 class="pod-name" id="primePioneersName">Prime Pioneers</h2>
+                        <div class="pod-icons">
+                            <button class="edit-name" onclick="editPodName('primePioneersName')">✎</button>
+                        </div>
+                    </div>
+                    <div class="pod-stats">
+                        <span class="podMRR">MRR: $<span>0</span></span>
+                        <span class="podClients">Clients: <span>0</span></span>
+                    </div>
+                    <div class="clients" id="primePioneersClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
             </div>
         </div>
         <button class="add-pod" onclick="addPod()">+</button>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
