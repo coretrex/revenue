@@ -1,5 +1,3 @@
-// Firebase initialization is done in the index.html
-
 let clientId = 0;
 let totalRevenue = 0;
 let mrrRiskRevenue = 0;
@@ -12,7 +10,7 @@ let forecastClients = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPods();
-    loadClientsFromFirebase();
+    loadClients();
     checkLoginState(); // Check if the user is already logged in
 });
 
@@ -54,7 +52,7 @@ function addClientToPod(podId) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClientsToFirebase();
+        saveClients();
         savePods();
         sortClients(podId);
 
@@ -107,7 +105,7 @@ function drop(event) {
     if (target) {
         target.appendChild(clientDiv);
         updatePodMetrics();
-        saveClientsToFirebase();
+        saveClients();
         savePods();
         sortClients(target.id);
     }
@@ -119,7 +117,7 @@ function deleteClient(clientId, clientRetainer) {
     clientDiv.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClientsToFirebase();
+    saveClients();
     savePods();
 }
 
@@ -152,7 +150,7 @@ function saveClient(clientId, oldRetainer) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClientsToFirebase();
+        saveClients();
         savePods();
         sortClients(clientDiv.closest('.clients').id);
     } else {
@@ -172,7 +170,7 @@ function changeStatus(clientId, newStatus) {
 
     updateMetrics();
     updatePodMetrics();
-    saveClientsToFirebase();
+    saveClients();
     savePods();
     sortClients(clientDiv.closest('.clients').id);
 }
@@ -349,11 +347,11 @@ function deletePod(podId) {
     pod.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClientsToFirebase();
+    saveClients();
     savePods();
 }
 
-async function saveClientsToFirebase() {
+function saveClients() {
     const clients = [];
     document.querySelectorAll('.client').forEach(clientDiv => {
         const clientId = clientDiv.id;
@@ -370,48 +368,51 @@ async function saveClientsToFirebase() {
         clients.push({ id: clientId, name: clientName, retainer, status, column, podName });
     });
 
-    for (const client of clients) {
-        await setDoc(doc(db, "clients", client.id), client);
-    }
+    localStorage.setItem('clients', JSON.stringify(clients));
+    localStorage.setItem('totalRevenue', totalRevenue);
+    localStorage.setItem('mrrRiskRevenue', mrrRiskRevenue);
+    localStorage.setItem('totalClients', totalClients);
+    localStorage.setItem('totalSolid', totalSolid);
+    localStorage.setItem('totalRisk', totalRisk);
+    localStorage.setItem('totalTerminated', totalTerminated);
+    localStorage.setItem('forecastRevenue', forecastRevenue);
+    localStorage.setItem('forecastClients', forecastClients);
 }
 
-async function loadClientsFromFirebase() {
-    const querySnapshot = await getDocs(collection(db, "clients"));
-    const clients = [];
-    querySnapshot.forEach((doc) => {
-        clients.push(doc.data());
-    });
-
-    clients.forEach(client => {
-        const clientDiv = createClientDiv(client.id, client.name, client.retainer);
-        if (client.status) {
-            clientDiv.classList.add(client.status);
-            if (client.status === 'forecast') {
-                clientDiv.style.color = '#696969';
-                clientDiv.style.backgroundColor = '#d3d3d3';
+function loadClients() {
+    const clients = JSON.parse(localStorage.getItem('clients'));
+    if (clients) {
+        clients.forEach(client => {
+            const clientDiv = createClientDiv(client.id, client.name, client.retainer);
+            if (client.status) {
+                clientDiv.classList.add(client.status);
+                if (client.status === 'forecast') {
+                    clientDiv.style.color = '#696969';
+                    clientDiv.style.backgroundColor = '#d3d3d3';
+                }
             }
-        }
-        document.getElementById(client.column).appendChild(clientDiv);
-        if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
-            totalRevenue += client.retainer;
-            totalClients += 1;
-            if (client.status === 'risk') {
-                mrrRiskRevenue += client.retainer;
-                totalRisk += 1;
-            } else if (client.status === 'solid') {
-                totalSolid += 1;
+            document.getElementById(client.column).appendChild(clientDiv);
+            if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
+                totalRevenue += client.retainer;
+                totalClients += 1;
+                if (client.status === 'risk') {
+                    mrrRiskRevenue += client.retainer;
+                    totalRisk += 1;
+                } else if (client.status === 'solid') {
+                    totalSolid += 1;
+                }
+            } else if (clientDiv.classList.contains('forecast')) {
+                forecastRevenue += client.retainer;
+                forecastClients += 1;
+            } else if (client.status === 'terminated') {
+                totalTerminated += 1;
             }
-        } else if (clientDiv.classList.contains('forecast')) {
-            forecastRevenue += client.retainer;
-            forecastClients += 1;
-        } else if (client.status === 'terminated') {
-            totalTerminated += 1;
-        }
-    });
-    clientId = clients.length;
-    updateMetrics();
-    updatePodMetrics();
-    sortAllClients();
+        });
+        clientId = clients.length;
+        updateMetrics();
+        updatePodMetrics();
+        sortAllClients();
+    }
 }
 
 function savePods() {
@@ -521,7 +522,7 @@ function addPod() {
     newClientsDiv.addEventListener('drop', drop);
 
     savePods();
-    saveClientsToFirebase();
+    saveClients();
 }
 
 function sortClients(columnId) {
