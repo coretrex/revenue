@@ -1,19 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
-  authDomain: "coretrex-forecast.firebaseapp.com",
-  projectId: "coretrex-forecast",
-  storageBucket: "coretrex-forecast.appspot.com",
-  messagingSenderId: "619634948025",
-  appId: "1:619634948025:web:229017572239cb7cfd2868"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Firebase initialization is done in the index.html
 
 let clientId = 0;
 let totalRevenue = 0;
@@ -69,7 +54,7 @@ function addClientToPod(podId) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClients();
+        saveClientsToFirebase();
         savePods();
         sortClients(podId);
 
@@ -122,7 +107,7 @@ function drop(event) {
     if (target) {
         target.appendChild(clientDiv);
         updatePodMetrics();
-        saveClients();
+        saveClientsToFirebase();
         savePods();
         sortClients(target.id);
     }
@@ -134,7 +119,7 @@ function deleteClient(clientId, clientRetainer) {
     clientDiv.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClients();
+    saveClientsToFirebase();
     savePods();
 }
 
@@ -167,7 +152,7 @@ function saveClient(clientId, oldRetainer) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClients();
+        saveClientsToFirebase();
         savePods();
         sortClients(clientDiv.closest('.clients').id);
     } else {
@@ -187,7 +172,7 @@ function changeStatus(clientId, newStatus) {
 
     updateMetrics();
     updatePodMetrics();
-    saveClients();
+    saveClientsToFirebase();
     savePods();
     sortClients(clientDiv.closest('.clients').id);
 }
@@ -364,7 +349,7 @@ function deletePod(podId) {
     pod.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClients();
+    saveClientsToFirebase();
     savePods();
 }
 
@@ -427,11 +412,6 @@ async function loadClientsFromFirebase() {
     updateMetrics();
     updatePodMetrics();
     sortAllClients();
-}
-
-function saveClients() {
-    // Existing local storage save logic...
-    saveClientsToFirebase();
 }
 
 function savePods() {
@@ -541,7 +521,7 @@ function addPod() {
     newClientsDiv.addEventListener('drop', drop);
 
     savePods();
-    saveClients();
+    saveClientsToFirebase();
 }
 
 function sortClients(columnId) {
