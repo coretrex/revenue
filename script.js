@@ -237,7 +237,7 @@ function editClient(clientId, oldRetainer) {
 }
 window.editClient = editClient;
 
-function saveClient(clientId, oldRetainer) {
+async function saveClient(clientId, oldRetainer) {
     const clientName = document.getElementById(`editName-${clientId}`).value;
     const newRetainer = parseFloat(document.getElementById(`editRetainer-${clientId}`).value);
 
@@ -255,10 +255,23 @@ function saveClient(clientId, oldRetainer) {
         updateMetrics();
         updatePodMetrics();
         sortClients(clientDiv.closest('.clients').id);
+
+        // Save the updated client information to Firestore
+        try {
+            const clientDocRef = doc(db, 'clients', clientId.split('-')[1]); // Extract Firestore ID from clientId
+            await updateDoc(clientDocRef, {
+                name: clientName,
+                retainer: newRetainer
+            });
+            console.log("Client updated in Firestore.");
+        } catch (e) {
+            console.error("Error updating client in Firestore: ", e);
+        }
     } else {
         alert('Please enter client name and retainer.');
     }
 }
+
 window.saveClient = saveClient;
 
 async function changeStatus(clientId, newStatus) {
