@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoreTrex Revenue Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Add Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js"></script>
-    <script>
+    <!-- Add Firebase SDK and initialize it using modules -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js';
+
         // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
@@ -18,13 +19,24 @@
             messagingSenderId: "619634948025",
             appId: "1:619634948025:web:229017572239cb7cfd2868"
         };
+
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Expose these to the window object if needed for use in other scripts
+        window.app = app;
+        window.db = db;
     </script>
 </head>
 <body>
-    <div id="main-content">
+    <div id="password-section">
+        <h1>Enter Password</h1>
+        <input type="password" id="password" placeholder="Enter Password">
+        <button id="passwordSubmit">Submit</button>
+    </div>
+
+    <div id="main-content" style="display:none;">
         <div class="header">
             <h1>CoreTrex Revenue Dashboard</h1>
             <div class="revenue-section">
@@ -86,6 +98,38 @@
             <button class="add-pod" onclick="addPod()">+</button>
         </div>
     </div>
-    <script src="script.js"></script>
+    
+    <!-- Inline script for password checking -->
+    <script>
+        function checkPassword() {
+            const password = document.getElementById('password').value;
+            if (password === '2020') {
+                localStorage.setItem('isLoggedIn', 'true'); // Save login state
+                showMainContent();
+            } else {
+                alert('Incorrect password');
+            }
+        }
+
+        function checkLoginState() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            if (isLoggedIn === 'true') {
+                showMainContent();
+            }
+        }
+
+        function showMainContent() {
+            document.getElementById('password-section').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('passwordSubmit').addEventListener('click', checkPassword);
+            checkLoginState();
+        });
+    </script>
+
+    <!-- Load your main script -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,3 +1,19 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js';
+import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, deleteDoc, query } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js';
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAjFkdDSbmHF2sTfeMKMkcl2L4tAdmdwqw",
+    authDomain: "coretrex-forecast.firebaseapp.com",
+    projectId: "coretrex-forecast",
+    storageBucket: "coretrex-forecast.appspot.com",
+    messagingSenderId: "619634948025",
+    appId: "1:619634948025:web:229017572239cb7cfd2868"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 let clientId = 0;
 let totalRevenue = 0;
 let mrrRiskRevenue = 0;
@@ -8,15 +24,15 @@ let totalTerminated = 0;
 let forecastRevenue = 0;
 let forecastClients = 0;
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadPods();
-    loadClients();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadPods();  // Ensure pods are loaded first
+    await loadClients(); // Then load clients
     checkLoginState(); // Check if the user is already logged in
 });
 
 function checkPassword() {
     const password = document.getElementById('password').value;
-    if (password === 'CoreTrex2020') {
+    if (password === '2020') {
         localStorage.setItem('isLoggedIn', 'true'); // Save login state
         showMainContent();
     } else {
@@ -36,32 +52,55 @@ function showMainContent() {
     document.getElementById('main-content').style.display = 'block';
 }
 
-function addClientToPod(podId) {
+async function addClientToPod(podId) {
     const pod = document.getElementById(podId).closest('.pod');
     const clientNameInput = pod.querySelector('.clientName');
     const clientRetainerInput = pod.querySelector('.clientRetainer');
     const clientName = clientNameInput.value;
     const clientRetainer = parseFloat(clientRetainerInput.value);
+    const podName = pod.querySelector('.pod-name').innerText;  // Get the pod name
+    const clientStatus = 'solid';  // Default status for new clients
 
     if (clientName && clientRetainer) {
-        const clientDiv = createClientDiv(clientId++, clientName, clientRetainer);
-        document.getElementById(podId).appendChild(clientDiv);
+        // Add to Firestore
+        try {
+            const docRef = await addDoc(collection(db, 'clients'), {
+                name: clientName,
+                retainer: clientRetainer,
+                podId: podId,
+                podName: podName,  // Save the pod name
+                status: clientStatus,  // Save the client status
+                createdAt: new Date()
+            });
+            console.log("Document written with ID: ", docRef.id);
 
-        // Update the client metrics based on the initial status
-        updateClientMetrics(clientDiv, clientRetainer, "add");
+            // Create the client div and add it to the DOM
+            const clientDiv = createClientDiv(docRef.id, clientName, clientRetainer);
+            clientDiv.classList.add(clientStatus);  // Apply the status class
+            const podElement = document.getElementById(podId);
+            if (podElement) {
+                podElement.appendChild(clientDiv);
 
-        updateMetrics();
-        updatePodMetrics();
-        saveClients();
-        savePods();
-        sortClients(podId);
+                // Update the client metrics based on the initial status
+                updateClientMetrics(clientDiv, clientRetainer, "add");
 
-        clientNameInput.value = '';
-        clientRetainerInput.value = '';
+                updateMetrics();
+                updatePodMetrics();
+                sortClients(podId);
+
+                clientNameInput.value = '';
+                clientRetainerInput.value = '';
+            } else {
+                console.error(`Pod element with ID ${podId} not found.`);
+            }
+        } catch (e) {
+            console.error("Error adding document: ", e);
+        }
     } else {
         alert('Please enter client name and retainer.');
     }
 }
+window.addClientToPod = addClientToPod;
 
 function createClientDiv(id, name, retainer) {
     const clientDiv = document.createElement('div');
@@ -91,10 +130,12 @@ function createClientDiv(id, name, retainer) {
 function dragStart(event) {
     event.dataTransfer.setData('text/plain', event.target.id);
 }
+window.dragStart = dragStart;
 
 function allowDrop(event) {
     event.preventDefault();
 }
+window.allowDrop = allowDrop;
 
 function drop(event) {
     event.preventDefault();
@@ -105,20 +146,82 @@ function drop(event) {
     if (target) {
         target.appendChild(clientDiv);
         updatePodMetrics();
-        saveClients();
-        savePods();
         sortClients(target.id);
     }
 }
+window.drop = drop;
 
 function deleteClient(clientId, clientRetainer) {
     const clientDiv = document.getElementById(clientId);
+
+    // Remove the client from the Firestore database
+    const clientDocId = clientId.split('-')[1]; // Extract the document ID from clientId
+    deleteClientFromFirestore(clientDocId);
+
     updateClientMetrics(clientDiv, clientRetainer, "delete");
     clientDiv.remove();
     updateMetrics();
     updatePodMetrics();
-    saveClients();
-    savePods();
+}
+window.deleteClient = deleteClient;
+
+async function deleteClientFromFirestore(clientDocId) {
+    try {
+        const clientDocRef = doc(db, 'clients', clientDocId);
+        await deleteDoc(clientDocRef);
+        console.log(`Client with ID ${clientDocId} deleted from Firestore.`);
+    } catch (e) {
+        console.error(`Error deleting client with ID ${clientDocId} from Firestore: `, e);
+    }
+}
+
+async function deletePod(podId) {
+    const pod = document.getElementById(podId);
+    const clients = pod.querySelectorAll('.client');
+
+    // Delete all clients associated with this pod from Firestore
+    await Promise.all(Array.from(clients).map(client => {
+        const clientDetails = client.querySelector('.client-details').textContent;
+        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
+        const clientDocId = client.id.split('-')[1]; // Extract the document ID from clientId
+
+        // Remove client from Firestore
+        return deleteClientFromFirestore(clientDocId).then(() => {
+            // Update metrics
+            if (!client.classList.contains('terminated') && !client.classList.contains('forecast')) {
+                totalRevenue -= retainer;
+                totalClients -= 1;
+                if (client.classList.contains('risk')) {
+                    mrrRiskRevenue -= retainer;
+                }
+            } else if (client.classList.contains('forecast')) {
+                forecastRevenue -= retainer;
+                forecastClients -= 1;
+            }
+            if (client.classList.contains('solid')) totalSolid -= 1;
+            else if (client.classList.contains('risk')) totalRisk -= 1;
+            else if (client.classList.contains('terminated')) totalTerminated -= 1;
+        });
+    }));
+
+    // Remove the pod from the Firestore database
+    const podDocId = pod.getAttribute('data-firestore-id');
+    deletePodFromFirestore(podDocId);
+
+    pod.remove();
+    updateMetrics();
+    updatePodMetrics();
+}
+window.deletePod = deletePod;
+
+async function deletePodFromFirestore(podDocId) {
+    try {
+        const podDocRef = doc(db, 'pods', podDocId);
+        await deleteDoc(podDocRef);
+        console.log(`Pod with ID ${podDocId} deleted from Firestore.`);
+    } catch (e) {
+        console.error(`Error deleting pod with ID ${podDocId} from Firestore: `, e);
+    }
 }
 
 function editClient(clientId, oldRetainer) {
@@ -132,6 +235,7 @@ function editClient(clientId, oldRetainer) {
         <button onclick="saveClient('${clientId}', ${oldRetainer})">Save</button>
     `;
 }
+window.editClient = editClient;
 
 function saveClient(clientId, oldRetainer) {
     const clientName = document.getElementById(`editName-${clientId}`).value;
@@ -150,41 +254,43 @@ function saveClient(clientId, oldRetainer) {
 
         updateMetrics();
         updatePodMetrics();
-        saveClients();
-        savePods();
         sortClients(clientDiv.closest('.clients').id);
     } else {
         alert('Please enter client name and retainer.');
     }
 }
+window.saveClient = saveClient;
 
-function changeStatus(clientId, newStatus) {
+async function changeStatus(clientId, newStatus) {
     const clientDiv = document.getElementById(clientId);
     const oldStatus = ['solid', 'risk', 'terminated', 'forecast'].find(s => clientDiv.classList.contains(s));
     clientDiv.classList.remove('solid', 'risk', 'terminated', 'forecast');
     clientDiv.classList.add(newStatus);
 
     const retainer = parseFloat(clientDiv.querySelector('.client-details').textContent.replace('$', '').replace(/,/g, ''));
+    const podName = clientDiv.closest('.pod').querySelector('.pod-name').innerText;
 
     updateClientMetrics(clientDiv, retainer, "status-change", oldStatus, newStatus);
 
     updateMetrics();
     updatePodMetrics();
-    saveClients();
-    savePods();
     sortClients(clientDiv.closest('.clients').id);
+
+    // Update the status and pod name in Firestore
+    try {
+        const clientDocRef = doc(db, 'clients', clientId.split('-')[1]);
+        await updateDoc(clientDocRef, {
+            status: newStatus,
+            podName: podName
+        });
+        console.log("Client status and pod name updated in Firestore.");
+    } catch (e) {
+        console.error("Error updating client status and pod name in Firestore: ", e);
+    }
 }
+window.changeStatus = changeStatus;
 
 function updateClientMetrics(clientDiv, retainer, operation, oldStatus = null, newStatus = null) {
-    // Debug outputs
-    console.log("Client Metrics Update:");
-    console.log("Operation:", operation);
-    console.log("Client:", clientDiv.id);
-    console.log("Retainer:", retainer);
-    console.log("Old Status:", oldStatus);
-    console.log("New Status:", newStatus);
-
-    // Add, delete, edit, or status-change
     switch (operation) {
         case "add":
             if (!clientDiv.classList.contains('terminated') && !clientDiv.classList.contains('forecast')) {
@@ -218,12 +324,12 @@ function updateClientMetrics(clientDiv, retainer, operation, oldStatus = null, n
             break;
         case "edit":
             if (!clientDiv.classList.contains('terminated') && !clientDiv.classList.contains('forecast')) {
-                totalRevenue = totalRevenue - oldRetainer + newRetainer;
+                totalRevenue = totalRevenue - oldRetainer + retainer;
                 if (clientDiv.classList.contains('risk')) {
-                    mrrRiskRevenue = mrrRiskRevenue - oldRetainer + newRetainer;
+                    mrrRiskRevenue = mrrRiskRevenue - oldRetainer + retainer;
                 }
             } else if (clientDiv.classList.contains('forecast')) {
-                forecastRevenue = forecastRevenue - oldRetainer + newRetainer;
+                forecastRevenue = forecastRevenue - oldRetainer + retainer;
             }
             break;
         case "status-change":
@@ -281,7 +387,6 @@ function updateMetrics() {
     document.getElementById('arrRisk').innerText = (mrrRiskRevenue * 12).toLocaleString();
     document.getElementById('totalTerminated').innerText = totalTerminated.toLocaleString();
 
-    // Calculate Forecast MRR and Forecast ARR excluding terminated clients
     let forecastMRR = 0;
     let forecastARR = 0;
     let forecastClients = 0;
@@ -324,148 +429,148 @@ function updatePodMetrics() {
     });
 }
 
-function deletePod(podId) {
-    const pod = document.getElementById(podId);
-    const clients = pod.querySelectorAll('.client');
-    clients.forEach(client => {
-        const clientDetails = client.querySelector('.client-details').textContent;
-        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
-        if (!client.classList.contains('terminated') && !client.classList.contains('forecast')) {
-            totalRevenue -= retainer;
-            totalClients -= 1;
-            if (client.classList.contains('risk')) {
-                mrrRiskRevenue -= retainer;
+async function loadClients() {
+    // Wait for all pods to load first
+    await loadPods();
+
+    // Clear the current display
+    document.querySelectorAll('.clients').forEach(column => column.innerHTML = '');
+
+    // Fetch all clients from Firestore
+    const q = query(collection(db, 'clients'));
+    const querySnapshot = await getDocs(q);
+    
+    querySnapshot.forEach(doc => {
+        const clientData = doc.data();
+        const clientDiv = createClientDiv(doc.id, clientData.name, clientData.retainer);
+        
+        // Apply the status class
+        if (clientData.status) {
+            clientDiv.classList.add(clientData.status);
+            if (clientData.status === 'forecast') {
+                clientDiv.style.color = '#696969';
+                clientDiv.style.backgroundColor = '#d3d3d3';
             }
-        } else if (client.classList.contains('forecast')) {
-            forecastRevenue -= retainer;
-            forecastClients -= 1;
         }
-        if (client.classList.contains('solid')) totalSolid -= 1;
-        else if (client.classList.contains('risk')) totalRisk -= 1;
-        else if (client.classList.contains('terminated')) totalTerminated -= 1;
-    });
-    pod.remove();
-    updateMetrics();
-    updatePodMetrics();
-    saveClients();
-    savePods();
-}
 
-function saveClients() {
-    const clients = [];
-    document.querySelectorAll('.client').forEach(clientDiv => {
-        const clientId = clientDiv.id;
-        const clientName = clientDiv.querySelector('.client-info').textContent;
-        const clientDetails = clientDiv.querySelector('.client-details').textContent;
-        const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
-        const status = clientDiv.classList.contains('solid') ? 'solid' :
-            clientDiv.classList.contains('risk') ? 'risk' :
-            clientDiv.classList.contains('terminated') ? 'terminated' :
-            clientDiv.classList.contains('forecast') ? 'forecast' : '';
-        const column = clientDiv.closest('.clients').id;
-        const podName = clientDiv.closest('.pod').querySelector('.pod-name').innerText;
+        // Append to the correct pod, if it exists
+        const podElement = document.getElementById(clientData.podId);
+        if (podElement) {
+            podElement.appendChild(clientDiv);
 
-        clients.push({ id: clientId, name: clientName, retainer, status, column, podName });
-    });
-
-    localStorage.setItem('clients', JSON.stringify(clients));
-    localStorage.setItem('totalRevenue', totalRevenue);
-    localStorage.setItem('mrrRiskRevenue', mrrRiskRevenue);
-    localStorage.setItem('totalClients', totalClients);
-    localStorage.setItem('totalSolid', totalSolid);
-    localStorage.setItem('totalRisk', totalRisk);
-    localStorage.setItem('totalTerminated', totalTerminated);
-    localStorage.setItem('forecastRevenue', forecastRevenue);
-    localStorage.setItem('forecastClients', forecastClients);
-}
-
-function loadClients() {
-    const clients = JSON.parse(localStorage.getItem('clients'));
-    if (clients) {
-        clients.forEach(client => {
-            const clientDiv = createClientDiv(client.id, client.name, client.retainer);
-            if (client.status) {
-                clientDiv.classList.add(client.status);
-                if (client.status === 'forecast') {
-                    clientDiv.style.color = '#696969';
-                    clientDiv.style.backgroundColor = '#d3d3d3';
-                }
-            }
-            document.getElementById(client.column).appendChild(clientDiv);
-            if (!clientDiv.classList.contains('terminated') && client.status !== 'forecast') {
-                totalRevenue += client.retainer;
+            // Update metrics (similar to what you do when adding a client)
+            if (!clientDiv.classList.contains('terminated') && clientData.status !== 'forecast') {
+                totalRevenue += clientData.retainer;
                 totalClients += 1;
-                if (client.status === 'risk') {
-                    mrrRiskRevenue += client.retainer;
+                if (clientData.status === 'risk') {
+                    mrrRiskRevenue += clientData.retainer;
                     totalRisk += 1;
-                } else if (client.status === 'solid') {
+                } else if (clientData.status === 'solid') {
                     totalSolid += 1;
                 }
             } else if (clientDiv.classList.contains('forecast')) {
-                forecastRevenue += client.retainer;
+                forecastRevenue += clientData.retainer;
                 forecastClients += 1;
-            } else if (client.status === 'terminated') {
+            } else if (clientData.status === 'terminated') {
                 totalTerminated += 1;
             }
-        });
-        clientId = clients.length;
-        updateMetrics();
-        updatePodMetrics();
-        sortAllClients();
-    }
-}
-
-function savePods() {
-    const pods = [];
-    document.querySelectorAll('.pod').forEach(pod => {
-        const podId = pod.id;
-        const podName = pod.querySelector('.pod-name').innerText;
-        const podClientsId = pod.querySelector('.clients').id;
-        pods.push({ id: podId, name: podName, clientsId: podClientsId });
+        } else {
+            console.error(`Pod element with ID ${clientData.podId} not found.`);
+        }
     });
-    localStorage.setItem('pods', JSON.stringify(pods));
+
+    // Update the metrics on the UI
+    updateMetrics();
+    updatePodMetrics();
+    sortAllClients();
 }
 
-function loadPods() {
-    const pods = JSON.parse(localStorage.getItem('pods'));
-    if (pods) {
-        document.getElementById('leftColumn').innerHTML = '';
-        document.getElementById('rightColumn').innerHTML = '';
-        pods.forEach(pod => {
-            const podDiv = document.createElement('div');
-            podDiv.classList.add('pod');
-            podDiv.id = pod.id;
-            podDiv.innerHTML = `
-                <div class="pod-header">
-                    <h2 class="pod-name" id="${pod.id}Name">${pod.name}</h2>
-                    <div class="pod-icons">
-                        <button class="edit-name" onclick="editPodName('${pod.id}Name')">✎</button>
-                    </div>
+async function loadPods() {
+    // Clear the current display
+    document.getElementById('leftColumn').innerHTML = '';
+    document.getElementById('rightColumn').innerHTML = '';
+
+    // Fetch all pods from Firestore
+    const q = query(collection(db, 'pods'));
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach(doc => {
+        const podData = doc.data();
+        const podDiv = document.createElement('div');
+        podDiv.classList.add('pod');
+        podDiv.id = podData.id;
+        podDiv.innerHTML = `
+            <div class="pod-header">
+                <h2 class="pod-name" id="${podData.id}Name">${podData.name}</h2>
+                <div class="pod-icons">
+                    <button class="edit-name" onclick="editPodName('${podData.id}Name')">✎</button>
                 </div>
-                <div class="pod-stats">
-                    <span class="podMRR">MRR: $<span>0</span></span>
-                    <span class="podClients">Clients: <span>0</span></span>
-                </div>
-                <div class="clients" id="${pod.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-                <div class="input-section">
-                    <input type="text" class="clientName" placeholder="Enter Client Name">
-                    <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
-                    <button onclick="addClientToPod('${pod.clientsId}')">Add Client</button>
-                </div>
-                <button class="delete-pod" onclick="deletePod('${pod.id}')">🗑️</button>
-            `;
-            const leftColumn = document.getElementById('leftColumn');
-            const rightColumn = document.getElementById('rightColumn');
-            if (leftColumn.children.length <= rightColumn.children.length) {
-                leftColumn.appendChild(podDiv);
-            } else {
-                rightColumn.appendChild(podDiv);
-            }
-            podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
-            podDiv.querySelector('.clients').addEventListener('drop', drop);
-        });
+            </div>
+            <div class="pod-stats">
+                <span class="podMRR">MRR: $<span>0</span></span>
+                <span class="podClients">Clients: <span>0</span></span>
+            </div>
+            <div class="clients" id="${podData.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="input-section">
+                <input type="text" class="clientName" placeholder="Enter Client Name">
+                <input type="number" class="clientRetainer" placeholder="Enter Client Retainer">
+                <button onclick="addClientToPod('${podData.clientsId}')">Add Client</button>
+            </div>
+            <button class="delete-pod" onclick="deletePod('${podData.id}')">🗑️</button>
+        `;
+
+        // Store the Firestore document ID with the DOM element
+        podDiv.setAttribute('data-firestore-id', doc.id);
+
+        const leftColumn = document.getElementById('leftColumn');
+        const rightColumn = document.getElementById('rightColumn');
+        if (leftColumn.children.length <= rightColumn.children.length) {
+            leftColumn.appendChild(podDiv);
+        } else {
+            rightColumn.appendChild(podDiv);
+        }
+
+        podDiv.querySelector('.clients').addEventListener('dragover', allowDrop);
+        podDiv.querySelector('.clients').addEventListener('drop', drop);
+    });
+}
+
+async function savePodName(podId) {
+    const podInput = document.getElementById(`${podId}-edit`);
+    const newName = podInput.value;
+    const podNameElement = document.getElementById(podId);
+    podNameElement.innerText = newName;
+
+    // Retrieve the Firestore document ID
+    const podDiv = document.getElementById(podId.replace('Name', ''));
+    const documentId = podDiv.getAttribute('data-firestore-id');
+
+    if (!documentId) {
+        console.error("Firestore document ID not found for pod:", podId);
+        return;
+    }
+
+    console.log("Attempting to update pod with Firestore ID:", documentId);
+
+    // Check if the document exists before trying to update it
+    const podDocRef = doc(db, 'pods', documentId);
+    const podDocSnap = await getDoc(podDocRef);
+
+    if (podDocSnap.exists()) {
+        // Update the pod name in Firestore
+        try {
+            await updateDoc(podDocRef, {
+                name: newName
+            });
+            console.log("Pod name updated in Firestore.");
+        } catch (e) {
+            console.error("Error updating pod name in Firestore: ", e);
+        }
+    } else {
+        console.error("No document found with Firestore ID:", documentId);
     }
 }
+window.savePodName = savePodName;
 
 function editPodName(podId) {
     const podSpan = document.getElementById(podId);
@@ -473,26 +578,21 @@ function editPodName(podId) {
     podSpan.innerHTML = `<input type="text" value="${currentName}" id="${podId}-edit" onblur="savePodName('${podId}')">`;
     document.getElementById(`${podId}-edit`).focus();
 }
+window.editPodName = editPodName;
 
-function savePodName(podId) {
-    const podInput = document.getElementById(`${podId}-edit`);
-    const newName = podInput.value;
-    document.getElementById(podId).innerText = newName;
-    savePods();
-}
-
-function addPod() {
+async function addPod() {
     const leftColumn = document.getElementById('leftColumn');
     const rightColumn = document.getElementById('rightColumn');
     const newPodId = `pod${document.querySelectorAll('.pod').length + 1}`;
     const newClientsId = `clients${document.querySelectorAll('.clients').length + 1}`;
+    const podName = "New Pod"; // Default name for new pods
 
     const podDiv = document.createElement('div');
     podDiv.classList.add('pod');
     podDiv.id = newPodId;
     podDiv.innerHTML = `
         <div class="pod-header">
-            <h2 class="pod-name" id="${newPodId}Name">New Pod</h2>
+            <h2 class="pod-name" id="${newPodId}Name">${podName}</h2>
             <div class="pod-icons">
                 <button class="edit-name" onclick="editPodName('${newPodId}Name')">✎</button>
             </div>
@@ -521,9 +621,24 @@ function addPod() {
     newClientsDiv.addEventListener('dragover', allowDrop);
     newClientsDiv.addEventListener('drop', drop);
 
-    savePods();
-    saveClients();
+    // Save the new pod to Firestore
+    try {
+        const docRef = await addDoc(collection(db, 'pods'), {
+            id: newPodId,
+            name: podName,
+            clientsId: newClientsId,
+            createdAt: new Date()
+        });
+
+        // Store the Firestore document ID with the DOM element
+        podDiv.setAttribute('data-firestore-id', docRef.id);
+
+        console.log("Pod added with ID: ", docRef.id);
+    } catch (e) {
+        console.error("Error adding pod: ", e);
+    }
 }
+window.addPod = addPod;
 
 function sortClients(columnId) {
     const column = document.getElementById(columnId);
