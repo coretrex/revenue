@@ -250,7 +250,7 @@ async function saveClient(clientId, oldRetainer) {
         clientDetails.innerHTML = `$${newRetainer.toLocaleString()}`;
 
         // Update metrics for editing the client
-        updateClientMetrics(clientDiv, newRetainer - oldRetainer, "edit");
+        updateClientMetrics(clientDiv, newRetainer, "edit", oldRetainer);
 
         updateMetrics();
         updatePodMetrics();
@@ -271,6 +271,8 @@ async function saveClient(clientId, oldRetainer) {
         alert('Please enter client name and retainer.');
     }
 }
+
+
 
 window.saveClient = saveClient;
 
@@ -303,7 +305,7 @@ async function changeStatus(clientId, newStatus) {
 }
 window.changeStatus = changeStatus;
 
-function updateClientMetrics(clientDiv, retainer, operation, oldStatus = null, newStatus = null) {
+function updateClientMetrics(clientDiv, retainer, operation, oldRetainer = 0, newStatus = null) {
     switch (operation) {
         case "add":
             if (!clientDiv.classList.contains('terminated') && !clientDiv.classList.contains('forecast')) {
@@ -389,6 +391,7 @@ function updateClientMetrics(clientDiv, retainer, operation, oldStatus = null, n
 
     updateMetrics();  // Ensure metrics are updated whenever client metrics are updated
 }
+
 
 function updateMetrics() {
     document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
