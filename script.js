@@ -244,10 +244,15 @@ function editClient(clientId, oldRetainer) {
 window.editClient = editClient;
 
 function formatDate(dateString) {
-    const options = { year: '2-digit', month: '2-digit', day: '2-digit' };
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', options).replace(/\//g, '.');
+    return date.toLocaleDateString('en-US', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+    }).replace(/\//g, '.');
 }
+
+
 
 async function saveClient(clientId, oldRetainer) {
     const clientName = document.getElementById(`editName-${clientId}`).value;
@@ -286,8 +291,8 @@ async function saveClient(clientId, oldRetainer) {
             await updateDoc(clientDocRef, {
                 name: clientName,
                 retainer: newRetainer,
-                startDate: startDate ? new Date(startDate) : null, // Save start date as a Date object
-                endDate: endDate ? new Date(endDate) : null // Save end date as a Date object
+                startDate: startDate ? new Date(startDate + 'T12:00:00') : null, // Save start date at noon
+                endDate: endDate ? new Date(endDate + 'T12:00:00') : null // Save end date at noon
             });
             console.log("Client updated in Firestore.");
         } catch (e) {
@@ -297,6 +302,7 @@ async function saveClient(clientId, oldRetainer) {
         alert('Please enter client name, retainer, start date, and end date.');
     }
 }
+
 window.saveClient = saveClient;
 
 async function changeStatus(clientId, newStatus) {
