@@ -43,6 +43,18 @@ body {
     color: #F08B01;
 }
 
+/* Tenure & LTV */
+
+.ltv{
+    color: #808080;
+    font-size: 16px;
+}
+
+.tenure{
+    color: #808080;
+    font-size: 16px;
+}
+
 /* styles.css */
 .drop-zone {
     min-height: 50px;
@@ -384,3 +396,14 @@ button:hover {
 #password-section button:hover {
     background-color: #0056b3;
 }
+
+.podClientsForecast {
+    color: grey;
+}
+
+.podClientsForecast i,
+.podClientsForecast svg {
+    margin-right: 5px; /* Adjust the spacing between the icon and the text */
+    vertical-align: middle; /* Align the icon vertically with the text */
+}
+

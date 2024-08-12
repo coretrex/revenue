@@ -252,8 +252,6 @@ function formatDate(dateString) {
     }).replace(/\//g, '.');
 }
 
-
-
 async function saveClient(clientId, oldRetainer) {
     const clientName = document.getElementById(`editName-${clientId}`).value;
     const newRetainer = parseFloat(document.getElementById(`editRetainer-${clientId}`).value);
@@ -307,7 +305,7 @@ window.saveClient = saveClient;
 
 async function changeStatus(clientId, newStatus) {
     const clientDiv = document.getElementById(clientId);
-    const oldStatus = ['solid', 'risk', 'terminated', 'forecast'].find(s => clientDiv.classList.contains(s));
+    const oldStatus = ['solid', 'risk', 'terminated', 'forecast'].find(s => clientDiv.classList.contains(s)); // Get the old status
     clientDiv.classList.remove('solid', 'risk', 'terminated', 'forecast');
     clientDiv.classList.add(newStatus);
 
@@ -332,9 +330,10 @@ async function changeStatus(clientId, newStatus) {
         console.error("Error updating client status and pod name in Firestore: ", e);
     }
 }
+
 window.changeStatus = changeStatus;
 
-function updateClientMetrics(clientDiv, retainer, operation, oldRetainer = 0, newStatus = null) {
+function updateClientMetrics(clientDiv, retainer, operation, oldRetainer = 0, oldStatus = null, newStatus = null) {
     switch (operation) {
         case "add":
             if (!clientDiv.classList.contains('terminated') && !clientDiv.classList.contains('forecast')) {
@@ -421,6 +420,66 @@ function updateClientMetrics(clientDiv, retainer, operation, oldRetainer = 0, ne
     updateMetrics();  // Ensure metrics are updated whenever client metrics are updated
 }
 
+
+function calculateAverageTenure() {
+    let totalDays = 0;
+    let count = 0;
+    const today = new Date();
+
+    document.querySelectorAll('.client').forEach(client => {
+        if (!client.classList.contains('forecast')) {
+            const startDate = client.getAttribute('data-start-date');
+            const endDate = client.getAttribute('data-end-date');
+            if (startDate) {
+                const start = new Date(startDate);
+
+                // Skip clients with start dates in the future
+                if (start > today) return;
+
+                const end = endDate ? new Date(endDate) : today;
+                const tenure = (end - start) / (1000 * 60 * 60 * 24); // Convert from milliseconds to days
+                totalDays += tenure;
+                count++;
+            }
+        }
+    });
+
+    const avgTenure = count > 0 ? Math.round(totalDays / count) : 0;
+    document.getElementById('avgTenureDays').innerText = avgTenure;
+}
+
+
+function calculateAverageLTV() {
+    let totalLTV = 0;
+    let count = 0;
+    const today = new Date();
+
+    document.querySelectorAll('.client').forEach(client => {
+        if (!client.classList.contains('forecast')) {
+            const startDate = client.getAttribute('data-start-date');
+            const endDate = client.getAttribute('data-end-date');
+            if (startDate) {
+                const start = new Date(startDate);
+
+                // Skip clients with start dates in the future
+                if (start > today) return;
+
+                const end = endDate ? new Date(endDate) : today;
+                const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+
+                const retainer = parseFloat(client.querySelector('.client-details').textContent.replace('$', '').replace(/,/g, ''));
+                const ltv = retainer * months;
+                totalLTV += ltv;
+                count++;
+            }
+        }
+    });
+
+    const avgLTV = count > 0 ? Math.round(totalLTV / count) : 0;
+    document.getElementById('avgLTV').innerText = avgLTV.toLocaleString();
+}
+
+
 function updateMetrics() {
     document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
     document.getElementById('annualRevenue').innerText = (totalRevenue * 12).toLocaleString();
@@ -446,6 +505,12 @@ function updateMetrics() {
     document.getElementById('forecastMRR').innerText = forecastMRR.toLocaleString();
     document.getElementById('forecastARR').innerText = forecastARR.toLocaleString();
     document.getElementById('forecastClients').innerText = forecastClients.toLocaleString();
+
+    // Update average tenure
+    calculateAverageTenure();
+
+    // Update average LTV
+    calculateAverageLTV();
 }
 
 function updatePodMetrics() {
@@ -454,14 +519,18 @@ function updatePodMetrics() {
         let podSolid = 0;
         let podRisk = 0;
         let podTerminated = 0;
-        let podClientsCount = 0;
+        let podActiveClientsCount = 0;
+        let podForecastClientsCount = 0;
 
         pod.querySelectorAll('.client').forEach(client => {
             const clientDetails = client.querySelector('.client-details').textContent;
             const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
             if (!client.classList.contains('terminated')) {
                 podRevenue += retainer;
-                podClientsCount += 1;
+                podForecastClientsCount += 1; // Count all non-terminated clients for forecast
+                if (!client.classList.contains('forecast')) {
+                    podActiveClientsCount += 1; // Count only non-forecast, non-terminated clients for active
+                }
             }
             if (client.classList.contains('solid')) podSolid += 1;
             else if (client.classList.contains('risk')) podRisk += 1;
@@ -469,7 +538,8 @@ function updatePodMetrics() {
         });
 
         pod.querySelector('.podMRR span').innerText = podRevenue.toLocaleString();
-        pod.querySelector('.podClients span').innerText = podClientsCount.toLocaleString();
+        pod.querySelector('.podClients span').innerText = podActiveClientsCount.toLocaleString();
+        pod.querySelector('.podClientsForecast span').innerText = podForecastClientsCount.toLocaleString();
     });
 }
 
@@ -566,7 +636,8 @@ async function loadPods() {
             </div>
             <div class="pod-stats">
                 <span class="podMRR">MRR: $<span>0</span></span>
-                <span class="podClients">Clients: <span>0</span></span>
+                <span class="podClientsForecast"><i class="fas fa-chart-line"></i></i>Forecast Clients: <span>0</span></span>
+                <span class="podClients">Active Clients: <span>0</span></span>
             </div>
             <div class="clients" id="${podData.clientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
             <div class="input-section">
@@ -657,7 +728,8 @@ async function addPod() {
         </div>
         <div class="pod-stats">
             <span class="podMRR">MRR: $<span>0</span></span>
-            <span class="podClients">Clients: <span>0</span></span>
+            <span class="podClients">Clients (Active): <span>0</span></span>
+            <span class="podClientsForecast">Clients (Forecast): <span>0</span></span>
         </div>
         <div class="clients" id="${newClientsId}" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
         <div class="input-section">

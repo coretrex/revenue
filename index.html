@@ -6,6 +6,7 @@
     <title>CoreTrex Revenue Dashboard</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Add Firebase SDK and initialize it using modules -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js';
@@ -55,6 +56,8 @@
                     <h2 class="forecast">Forecast ARR: $<span id="forecastARR">0</span></h2>
                     <h2 class="forecast">Forecast MRR: $<span id="forecastMRR">0</span></h2>
                     <h2 class="forecast">Forecast Clients: <span id="forecastClients">0</span></h2>
+                    <h2 class="tenure">Avg. Tenure (Days): <span id="avgTenureDays">0</span></h2>
+                    <h2 class="ltv">Avg. LTV: $<span id="avgLTV">0</span></h2>
                 </div>
             </div>
         </div>
@@ -75,7 +78,8 @@
                         </div>
                         <div class="pod-stats">
                             <span class="podMRR">MRR: $<span>0</span></span>
-                            <span class="podClients">Clients: <span>0</span></span>
+                            <span class="podClients">Clients (Active): <span>0</span></span>
+                            <span class="podClientsForecast"><i class="fas fa-chart-line"></i></i>Forecast Clients: <span>0</span></span>
                         </div>
                         <div class="clients" id="apexNavigatorsClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
                     </div>
@@ -90,7 +94,8 @@
                         </div>
                         <div class="pod-stats">
                             <span class="podMRR">MRR: $<span>0</span></span>
-                            <span class="podClients">Clients: <span>0</span></span>
+                            <span class="podClients">Clients (Active): <span>0</span></span>
+                            <span class="podClientsForecast"><i class="fas fa-chart-line"></i></i>Forecast Clients: <span>0</span></span>
                         </div>
                         <div class="clients" id="primePioneersClients" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
                     </div>
