@@ -229,25 +229,49 @@ function editClient(clientId, oldRetainer) {
     const clientInfo = clientDiv.querySelector('.client-info');
     const clientName = clientInfo.textContent.trim();
 
+    // Retrieve the dates from data attributes
+    const startDate = clientDiv.getAttribute('data-start-date') || '';
+    const endDate = clientDiv.getAttribute('data-end-date') || '';
+
     clientInfo.innerHTML = `
         <input type="text" value="${clientName}" id="editName-${clientId}">
         <input type="number" value="${oldRetainer}" id="editRetainer-${clientId}">
+        <input type="date" id="editStartDate-${clientId}" placeholder="Start Date" value="${startDate}">
+        <input type="date" id="editEndDate-${clientId}" placeholder="End Date" value="${endDate}">
         <button onclick="saveClient('${clientId}', ${oldRetainer})">Save</button>
     `;
 }
 window.editClient = editClient;
 
+function formatDate(dateString) {
+    const options = { year: '2-digit', month: '2-digit', day: '2-digit' };
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', options).replace(/\//g, '.');
+}
+
 async function saveClient(clientId, oldRetainer) {
     const clientName = document.getElementById(`editName-${clientId}`).value;
     const newRetainer = parseFloat(document.getElementById(`editRetainer-${clientId}`).value);
+    const startDate = document.getElementById(`editStartDate-${clientId}`).value;
+    const endDate = document.getElementById(`editEndDate-${clientId}`).value;
 
     if (clientName && newRetainer) {
         const clientDiv = document.getElementById(clientId);
         const clientInfo = clientDiv.querySelector('.client-info');
         const clientDetails = clientDiv.querySelector('.client-details');
 
+        const formattedStartDate = startDate ? formatDate(startDate) : '';
+        const formattedEndDate = endDate ? formatDate(endDate) : '';
+
         clientInfo.innerHTML = clientName;
-        clientDetails.innerHTML = `$${newRetainer.toLocaleString()}`;
+        clientDetails.innerHTML = `$${newRetainer.toLocaleString()} - Start: ${formattedStartDate}`;
+        if (formattedEndDate) {
+            clientDetails.innerHTML += ` - End: ${formattedEndDate}`;
+        }
+
+        // Store the dates in data attributes
+        clientDiv.setAttribute('data-start-date', startDate);
+        clientDiv.setAttribute('data-end-date', endDate);
 
         // Update metrics for editing the client
         updateClientMetrics(clientDiv, newRetainer, "edit", oldRetainer);
@@ -261,19 +285,18 @@ async function saveClient(clientId, oldRetainer) {
             const clientDocRef = doc(db, 'clients', clientId.split('-')[1]); // Extract Firestore ID from clientId
             await updateDoc(clientDocRef, {
                 name: clientName,
-                retainer: newRetainer
+                retainer: newRetainer,
+                startDate: startDate ? new Date(startDate) : null, // Save start date as a Date object
+                endDate: endDate ? new Date(endDate) : null // Save end date as a Date object
             });
             console.log("Client updated in Firestore.");
         } catch (e) {
             console.error("Error updating client in Firestore: ", e);
         }
     } else {
-        alert('Please enter client name and retainer.');
+        alert('Please enter client name, retainer, start date, and end date.');
     }
 }
-
-
-
 window.saveClient = saveClient;
 
 async function changeStatus(clientId, newStatus) {
@@ -392,7 +415,6 @@ function updateClientMetrics(clientDiv, retainer, operation, oldRetainer = 0, ne
     updateMetrics();  // Ensure metrics are updated whenever client metrics are updated
 }
 
-
 function updateMetrics() {
     document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
     document.getElementById('annualRevenue').innerText = (totalRevenue * 12).toLocaleString();
@@ -459,7 +481,7 @@ async function loadClients() {
     querySnapshot.forEach(doc => {
         const clientData = doc.data();
         const clientDiv = createClientDiv(doc.id, clientData.name, clientData.retainer);
-        
+
         // Apply the status class
         if (clientData.status) {
             clientDiv.classList.add(clientData.status);
@@ -468,6 +490,20 @@ async function loadClients() {
                 clientDiv.style.backgroundColor = '#d3d3d3';
             }
         }
+
+        // Format and display the startDate and endDate
+        const formattedStartDate = clientData.startDate ? formatDate(clientData.startDate.toDate()) : '';
+        const formattedEndDate = clientData.endDate ? formatDate(clientData.endDate.toDate()) : '';
+
+        const clientDetails = clientDiv.querySelector('.client-details');
+        clientDetails.innerHTML = `$${clientData.retainer.toLocaleString()} - Start: ${formattedStartDate}`;
+        if (formattedEndDate) {
+            clientDetails.innerHTML += ` - End: ${formattedEndDate}`;
+        }
+
+        // Store the dates in data attributes
+        clientDiv.setAttribute('data-start-date', clientData.startDate ? clientData.startDate.toDate().toISOString().split('T')[0] : '');
+        clientDiv.setAttribute('data-end-date', clientData.endDate ? clientData.endDate.toDate().toISOString().split('T')[0] : '');
 
         // Append to the correct pod, if it exists
         const podElement = document.getElementById(clientData.podId);
