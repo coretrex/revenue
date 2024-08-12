@@ -1,4 +1,3 @@
-/* styles.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
 body {
@@ -59,9 +58,6 @@ body {
 .hidden {
     display: none !important;
 }
-
-
-
 
 .revenue-section h2.terminated {
     color: #D25E5E;
@@ -152,7 +148,6 @@ button:hover {
     scrollbar-color: #888 #f1f1f1; /* Scrollbar thumb and track color */
 }
 
-
 .pod-header {
     display: flex;
     justify-content: space-between;
@@ -196,7 +191,6 @@ button:hover {
     font-size:16px;
 }
 
-
 .pod-stats span {
     margin-right: 10px;
 }
@@ -226,7 +220,6 @@ button:hover {
     color: #696969; /* Dark grey text */
 }
 
-
 .clients {
     display: flex;
     flex-direction: column;
@@ -242,6 +235,7 @@ button:hover {
     background-color: #ffffff;
     display: flex;
     align-items: center;
+    justify-content: space-between; /* Ensures the content is spaced between the edges */
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     overflow: hidden; /* Remove the scrollbar */
 }
@@ -272,6 +266,7 @@ button:hover {
     font-weight: bold;
     margin-right: 10px;
     padding-left:10px;
+    flex-grow: 1; /* Ensures the client name takes up available space */
 }
 
 .client-details {
@@ -283,7 +278,7 @@ button:hover {
 .client .status-buttons {
     display: flex;
     gap: 5px;
-    margin-right: 10px;
+    margin-left: auto; /* Aligns the buttons to the right */
 }
 
 .client .status-button {
@@ -313,7 +308,7 @@ button:hover {
     background: none;
     border: none;
     cursor: pointer;
-    margin-right: 10px;
+    margin-left: 10px; /* Provides spacing between the edit and delete buttons */
 }
 
 .client .edit:hover {
@@ -324,6 +319,7 @@ button:hover {
     background: none;
     border: none;
     cursor: pointer;
+    margin-left: 10px; /* Provides spacing between the edit and delete buttons */
 }
 
 .client .delete:hover {
@@ -346,9 +342,6 @@ button:hover {
 .add-pod:hover {
     background-color: #218838;
 }
-
-
-/* styles.css */
 
 /* Add these styles for the password section */
 #password-section {
