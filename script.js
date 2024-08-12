@@ -526,11 +526,11 @@ function updatePodMetrics() {
             const clientDetails = client.querySelector('.client-details').textContent;
             const retainer = parseFloat(clientDetails.replace('$', '').replace(/,/g, ''));
             if (!client.classList.contains('terminated')) {
-                podRevenue += retainer;
-                podForecastClientsCount += 1; // Count all non-terminated clients for forecast
                 if (!client.classList.contains('forecast')) {
+                    podRevenue += retainer; // Only add to podRevenue if not forecasted
                     podActiveClientsCount += 1; // Count only non-forecast, non-terminated clients for active
                 }
+                podForecastClientsCount += 1; // Count all non-terminated clients for forecast
             }
             if (client.classList.contains('solid')) podSolid += 1;
             else if (client.classList.contains('risk')) podRisk += 1;
@@ -542,6 +542,7 @@ function updatePodMetrics() {
         pod.querySelector('.podClientsForecast span').innerText = podForecastClientsCount.toLocaleString();
     });
 }
+
 
 async function loadClients() {
     // Wait for all pods to load first
