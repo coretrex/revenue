@@ -3,7 +3,7 @@
 body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
-    background: green;
+    background: linear-gradient(135deg, #000428 0%, #004e92 100%);
 }
 
 .header {
@@ -362,7 +362,7 @@ button:hover {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: green;
+    background: linear-gradient(135deg, #000428 0%, #004e92 100%);
 }
 
 #password-section h1 {
